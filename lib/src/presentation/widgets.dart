@@ -7,7 +7,12 @@ import '../core/theme.dart';
 import '../domain/models.dart';
 
 class PageHeader extends StatelessWidget {
-  const PageHeader({required this.title, this.subtitle, this.action, super.key});
+  const PageHeader({
+    required this.title,
+    this.subtitle,
+    this.action,
+    super.key,
+  });
 
   final String title;
   final String? subtitle;
@@ -101,10 +106,7 @@ class SectionHeader extends StatelessWidget {
       child: Row(
         children: <Widget>[
           Expanded(
-            child: Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            child: Text(title, style: Theme.of(context).textTheme.titleLarge),
           ),
           if (trailing != null) trailing!,
         ],
@@ -271,9 +273,9 @@ class StatusPill extends StatelessWidget {
           ],
           Text(
             label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: color,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: color),
           ),
         ],
       ),
@@ -325,10 +327,7 @@ class EmptyState extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
-          if (action != null) ...<Widget>[
-            const SizedBox(height: 22),
-            action!,
-          ],
+          if (action != null) ...<Widget>[const SizedBox(height: 22), action!],
         ],
       ),
     );
@@ -383,17 +382,13 @@ class _SpeedChartPainter extends CustomPainter {
     if (samples.length < 2) return;
     final maxValue = samples.fold<int>(
       1,
-      (int current, ActivitySample sample) => math.max(
-        current,
-        math.max(sample.downloadRate, sample.uploadRate),
-      ),
+      (int current, ActivitySample sample) =>
+          math.max(current, math.max(sample.downloadRate, sample.uploadRate)),
     );
     _drawSeries(
       canvas,
       size,
-      samples
-          .map((ActivitySample item) => item.downloadRate)
-          .toList(),
+      samples.map((ActivitySample item) => item.downloadRate).toList(),
       maxValue,
       downloadColor,
     );

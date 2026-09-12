@@ -25,7 +25,9 @@ class _SeedexShellState extends State<SeedexShell> {
   void initState() {
     super.initState();
     widget.controller.addListener(_handleControllerEvent);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _handleControllerEvent());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _handleControllerEvent(),
+    );
   }
 
   @override
@@ -47,6 +49,7 @@ class _SeedexShellState extends State<SeedexShell> {
           context,
           widget.controller,
           initialMagnet: value.magnet,
+          initialTorrentFile: value.torrentFile,
           initialSourceUrl: value.sourceUrl,
         );
         _handlingOverlay = false;

@@ -22,7 +22,9 @@ class TorrentDetailScreen extends StatelessWidget {
     return AnimatedBuilder(
       animation: controller,
       builder: (BuildContext context, Widget? child) {
-        final matching = controller.torrents.where((TorrentRecord item) => item.id == torrentId);
+        final matching = controller.torrents.where(
+          (TorrentRecord item) => item.id == torrentId,
+        );
         if (matching.isEmpty) {
           return Scaffold(
             appBar: AppBar(),
@@ -33,7 +35,10 @@ class TorrentDetailScreen extends StatelessWidget {
             ),
           );
         }
-        return _TorrentDetailBody(controller: controller, record: matching.first);
+        return _TorrentDetailBody(
+          controller: controller,
+          record: matching.first,
+        );
       },
     );
   }
@@ -86,7 +91,9 @@ class _TorrentDetailBody extends StatelessWidget {
                         progress: record.progress,
                         size: 118,
                         strokeWidth: 10,
-                        color: record.isSeeding ? SeedexPalette.green : SeedexPalette.blue,
+                        color: record.isSeeding
+                            ? SeedexPalette.green
+                            : SeedexPalette.blue,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
@@ -94,7 +101,10 @@ class _TorrentDetailBody extends StatelessWidget {
                               formatPercent(record.progress),
                               style: theme.textTheme.headlineMedium,
                             ),
-                            Text(record.paused ? 'Paused' : record.status, style: theme.textTheme.labelMedium),
+                            Text(
+                              record.paused ? 'Paused' : record.status,
+                              style: theme.textTheme.labelMedium,
+                            ),
                           ],
                         ),
                       ),
@@ -117,7 +127,9 @@ class _TorrentDetailBody extends StatelessWidget {
                         const SizedBox(height: 12),
                         Text(
                           record.error,
-                          style: theme.textTheme.bodyMedium?.copyWith(color: SeedexPalette.red),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: SeedexPalette.red,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -131,7 +143,9 @@ class _TorrentDetailBody extends StatelessWidget {
               children: <Widget>[
                 Expanded(
                   child: _PrimaryControl(
-                    icon: record.paused ? CupertinoIcons.play_fill : CupertinoIcons.pause_fill,
+                    icon: record.paused
+                        ? CupertinoIcons.play_fill
+                        : CupertinoIcons.pause_fill,
                     label: record.paused ? 'Resume' : 'Pause',
                     onPressed: () => record.paused
                         ? controller.resumeTorrent(record.id)
@@ -159,10 +173,28 @@ class _TorrentDetailBody extends StatelessWidget {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               children: <Widget>[
-                StatTile(label: 'Download', value: formatSpeed(record.downloadRate), icon: CupertinoIcons.arrow_down),
-                StatTile(label: 'Upload', value: formatSpeed(record.uploadRate), icon: CupertinoIcons.arrow_up, color: SeedexPalette.green),
-                StatTile(label: 'Peers', value: record.peers.toString(), icon: CupertinoIcons.person_2_fill),
-                StatTile(label: 'Seeds', value: record.seeds.toString(), icon: CupertinoIcons.cloud_upload_fill, color: SeedexPalette.green),
+                StatTile(
+                  label: 'Download',
+                  value: formatSpeed(record.downloadRate),
+                  icon: CupertinoIcons.arrow_down,
+                ),
+                StatTile(
+                  label: 'Upload',
+                  value: formatSpeed(record.uploadRate),
+                  icon: CupertinoIcons.arrow_up,
+                  color: SeedexPalette.green,
+                ),
+                StatTile(
+                  label: 'Peers',
+                  value: record.peers.toString(),
+                  icon: CupertinoIcons.person_2_fill,
+                ),
+                StatTile(
+                  label: 'Seeds',
+                  value: record.seeds.toString(),
+                  icon: CupertinoIcons.cloud_upload_fill,
+                  color: SeedexPalette.green,
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -180,10 +212,15 @@ class _TorrentDetailBody extends StatelessWidget {
                 children: <Widget>[
                   Row(
                     children: <Widget>[
-                      Text('${record.ratioTarget.toStringAsFixed(record.ratioTarget % 1 == 0 ? 0 : 1)}:1 target',
-                          style: theme.textTheme.titleMedium),
+                      Text(
+                        '${record.ratioTarget.toStringAsFixed(record.ratioTarget % 1 == 0 ? 0 : 1)}:1 target',
+                        style: theme.textTheme.titleMedium,
+                      ),
                       const Spacer(),
-                      Text('Ratio ${formatRatio(record.ratio)}', style: theme.textTheme.labelLarge),
+                      Text(
+                        'Ratio ${formatRatio(record.ratio)}',
+                        style: theme.textTheme.labelLarge,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 13),
@@ -225,10 +262,16 @@ class _TorrentDetailBody extends StatelessWidget {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.1,
+                          ),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(CupertinoIcons.globe, color: SeedexPalette.blue, size: 20),
+                        child: const Icon(
+                          CupertinoIcons.globe,
+                          color: SeedexPalette.blue,
+                          size: 20,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -236,10 +279,15 @@ class _TorrentDetailBody extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Text(
-                              record.sourceDomain.isEmpty ? 'Unknown source' : record.sourceDomain,
+                              record.sourceDomain.isEmpty
+                                  ? 'Unknown source'
+                                  : record.sourceDomain,
                               style: theme.textTheme.titleMedium,
                             ),
-                            Text(_confidenceLabel(record.sourceConfidence), style: theme.textTheme.labelMedium),
+                            Text(
+                              _confidenceLabel(record.sourceConfidence),
+                              style: theme.textTheme.labelMedium,
+                            ),
                           ],
                         ),
                       ),
@@ -249,17 +297,22 @@ class _TorrentDetailBody extends StatelessWidget {
                     const SizedBox(height: 15),
                     const Divider(),
                     const SizedBox(height: 12),
-                    Text('TRACKER NETWORKS', style: theme.textTheme.labelMedium),
+                    Text(
+                      'TRACKER NETWORKS',
+                      style: theme.textTheme.labelMedium,
+                    ),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 6,
                       runSpacing: 6,
                       children: record.trackers
                           .take(5)
-                          .map((String tracker) => StatusPill(
-                                label: tracker,
-                                color: SeedexPalette.secondary,
-                              ))
+                          .map(
+                            (String tracker) => StatusPill(
+                              label: tracker,
+                              color: SeedexPalette.secondary,
+                            ),
+                          )
                           .toList(),
                     ),
                   ],
@@ -273,11 +326,11 @@ class _TorrentDetailBody extends StatelessWidget {
   }
 
   String _confidenceLabel(SourceConfidence confidence) => switch (confidence) {
-        SourceConfidence.exact => 'Exact · shared from the source page',
-        SourceConfidence.manual => 'Manually provided',
-        SourceConfidence.tracker => 'Inferred from tracker metadata',
-        SourceConfidence.unknown => 'Original website unavailable',
-      };
+    SourceConfidence.exact => 'Exact · shared from the source page',
+    SourceConfidence.manual => 'Manually provided',
+    SourceConfidence.tracker => 'Inferred from tracker metadata',
+    SourceConfidence.unknown => 'Original website unavailable',
+  };
 
   Future<void> _showActions(BuildContext context) async {
     await showModalBottomSheet<void>(
@@ -297,7 +350,10 @@ class _TorrentDetailBody extends StatelessWidget {
                 },
               ),
               ListTile(
-                leading: const Icon(CupertinoIcons.trash, color: SeedexPalette.red),
+                leading: const Icon(
+                  CupertinoIcons.trash,
+                  color: SeedexPalette.red,
+                ),
                 title: const Text('Remove from Seedex'),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
@@ -323,21 +379,30 @@ class _TorrentDetailBody extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const Text('The portfolio record will be removed. This cannot be undone.'),
+                const Text(
+                  'The portfolio record will be removed. This cannot be undone.',
+                ),
                 const SizedBox(height: 12),
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Also delete downloaded files'),
                   value: deleteFiles,
-                  onChanged: (bool? value) => setState(() => deleteFiles = value ?? false),
+                  onChanged: (bool? value) =>
+                      setState(() => deleteFiles = value ?? false),
                 ),
               ],
             ),
             actions: <Widget>[
-              TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancel')),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Cancel'),
+              ),
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: const Text('Remove', style: TextStyle(color: SeedexPalette.red)),
+                child: const Text(
+                  'Remove',
+                  style: TextStyle(color: SeedexPalette.red),
+                ),
               ),
             ],
           );
@@ -352,7 +417,11 @@ class _TorrentDetailBody extends StatelessWidget {
 }
 
 class _PrimaryControl extends StatelessWidget {
-  const _PrimaryControl({required this.icon, required this.label, required this.onPressed});
+  const _PrimaryControl({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
 
   final IconData icon;
   final String label;

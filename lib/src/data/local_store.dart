@@ -6,10 +6,14 @@ import '../domain/models.dart';
 
 class LocalStore {
   LocalStore({SharedPreferencesAsync? preferences})
-      : _preferences = preferences ?? SharedPreferencesAsync();
+    : _preferences = preferences ?? SharedPreferencesAsync();
 
   static const String stateKey = 'seedex.state.v1';
   static const String engineLedgerKey = 'seedex.engine-ledger.v1';
+  static const String telegramCompletionKey =
+      'seedex.telegram-completion-markers.v1';
+  static const String telegramUpdateOffsetKey =
+      'seedex.telegram-update-offset.v1';
 
   final SharedPreferencesAsync _preferences;
 
@@ -29,7 +33,8 @@ class LocalStore {
       if (decoded is! Map<String, Object?>) throw const FormatException();
       final torrentValues =
           decoded['torrents'] as List<Object?>? ?? const <Object?>[];
-      final goalValues = decoded['goals'] as List<Object?>? ?? const <Object?>[];
+      final goalValues =
+          decoded['goals'] as List<Object?>? ?? const <Object?>[];
       final activityValues =
           decoded['activity'] as List<Object?>? ?? const <Object?>[];
       final rawSettings = decoded['settings'];
@@ -52,7 +57,6 @@ class LocalStore {
             : const AppSettings(),
       );
     } on Object {
-      // A damaged state file should never prevent the app from opening.
       return const AppSnapshot(
         torrents: <TorrentRecord>[],
         goals: <SeedGoal>[],
@@ -65,7 +69,9 @@ class LocalStore {
   Future<void> save(AppSnapshot snapshot) async {
     final encoded = jsonEncode(<String, Object?>{
       'version': 1,
-      'torrents': snapshot.torrents.map((TorrentRecord item) => item.toJson()).toList(),
+      'torrents': snapshot.torrents
+          .map((TorrentRecord item) => item.toJson())
+          .toList(),
       'goals': snapshot.goals.map((SeedGoal item) => item.toJson()).toList(),
       'activity': snapshot.activity
           .map((ActivitySample item) => item.toJson())
@@ -82,7 +88,9 @@ class LocalStore {
     }
     try {
       final decoded = jsonDecode(encoded);
-      if (decoded is! Map<String, Object?>) return <String, Map<String, Map<String, int>>>{};
+      if (decoded is! Map<String, Object?>) {
+        return <String, Map<String, Map<String, int>>>{};
+      }
       final result = <String, Map<String, Map<String, int>>>{};
       for (final torrentEntry in decoded.entries) {
         final rawSessions = torrentEntry.value;
@@ -93,8 +101,8 @@ class LocalStore {
           if (rawValues is! Map<String, Object?>) continue;
           sessions[sessionEntry.key] = <String, int>{
             'uploaded': (rawValues['uploaded'] as num? ?? 0).toInt(),
-            'seedingSeconds':
-                (rawValues['seedingSeconds'] as num? ?? 0).toInt(),
+            'seedingSeconds': (rawValues['seedingSeconds'] as num? ?? 0)
+                .toInt(),
           };
         }
         result[torrentEntry.key] = sessions;
@@ -109,5 +117,23 @@ class LocalStore {
     Map<String, Map<String, Map<String, int>>> ledger,
   ) async {
     await _preferences.setString(engineLedgerKey, jsonEncode(ledger));
+  }
+
+  Future<Set<String>> loadTelegramCompletionMarkers() async {
+    final values = await _preferences.getStringList(telegramCompletionKey);
+    return (values ?? const <String>[]).toSet();
+  }
+
+  Future<void> saveTelegramCompletionMarkers(Set<String> values) async {
+    final sorted = values.toList()..sort();
+    await _preferences.setStringList(telegramCompletionKey, sorted);
+  }
+
+  Future<int> loadTelegramUpdateOffset() async {
+    return await _preferences.getInt(telegramUpdateOffsetKey) ?? 0;
+  }
+
+  Future<void> saveTelegramUpdateOffset(int value) async {
+    await _preferences.setInt(telegramUpdateOffsetKey, value);
   }
 }

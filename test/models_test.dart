@@ -21,7 +21,7 @@ void main() {
       expect(record.remainingForRatio, 250);
     });
 
-    test('round-trips through local JSON', () {
+    test('round-trips start mode through local JSON', () {
       final original = TorrentRecord(
         id: 'two',
         inputType: TorrentInputType.file,
@@ -29,6 +29,7 @@ void main() {
         displayName: 'Example',
         savePath: '/downloads',
         addedAt: DateTime.utc(2026, 9, 12),
+        startMode: TorrentStartMode.existingData,
         sourceDomain: 'example.org',
         sourceConfidence: SourceConfidence.manual,
         trackers: const <String>['tracker.example.org'],
@@ -37,9 +38,38 @@ void main() {
 
       final restored = TorrentRecord.fromJson(original.toJson());
       expect(restored.id, original.id);
+      expect(restored.startMode, TorrentStartMode.existingData);
+      expect(restored.usesExistingData, isTrue);
       expect(restored.sourceDomain, 'example.org');
       expect(restored.trackers, <String>['tracker.example.org']);
       expect(restored.uploadLedger['session'], 12);
+    });
+
+    test('old records default to download and seed mode', () {
+      final restored = TorrentRecord.fromJson(<String, Object?>{
+        'id': 'legacy',
+      });
+
+      expect(restored.startMode, TorrentStartMode.downloadAndSeed);
+      expect(restored.usesExistingData, isFalse);
+    });
+  });
+
+  group('AppSettings', () {
+    test('round-trips Telegram feature switches without credentials', () {
+      const original = AppSettings(
+        telegramEnabled: true,
+        telegramRemoteCommands: false,
+        telegramCompletionNotifications: true,
+        telegramGoalNotifications: false,
+      );
+
+      final restored = AppSettings.fromJson(original.toJson());
+      expect(restored.telegramEnabled, isTrue);
+      expect(restored.telegramRemoteCommands, isFalse);
+      expect(restored.telegramCompletionNotifications, isTrue);
+      expect(restored.telegramGoalNotifications, isFalse);
+      expect(restored.toJson().containsKey('botToken'), isFalse);
     });
   });
 

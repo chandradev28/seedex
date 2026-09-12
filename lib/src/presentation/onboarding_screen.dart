@@ -53,17 +53,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               const _Feature(
                 icon: CupertinoIcons.lock_shield,
                 title: 'Private by design',
-                body: 'No account, hosted database, analytics, or cloud profile.',
+                body:
+                    'No account, hosted database, analytics, or cloud profile.',
               ),
               const _Feature(
                 icon: CupertinoIcons.chart_bar_alt_fill,
                 title: 'A real contribution portfolio',
-                body: 'Track payload uploaded, 1:1 ratios, seeding time, and custom goals.',
+                body:
+                    'Track payload uploaded, 1:1 ratios, seeding time, and custom goals.',
               ),
               const _Feature(
                 icon: CupertinoIcons.info_circle_fill,
                 title: 'Your IP is visible to peers',
-                body: 'Peer-to-peer sharing is public to the swarm. Seed only content you may distribute.',
+                body:
+                    'Peer-to-peer sharing is public to the swarm. Seed only content you may distribute.',
               ),
               const Spacer(),
               Semantics(
@@ -94,8 +97,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ),
                           ),
                           child: _confirmed
-                              ? const Icon(CupertinoIcons.check_mark,
-                                  size: 16, color: Colors.white)
+                              ? const Icon(
+                                  CupertinoIcons.check_mark,
+                                  size: 16,
+                                  color: Colors.white,
+                                )
                               : null,
                         ),
                         const SizedBox(width: 12),

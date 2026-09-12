@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -5,12 +8,14 @@ import 'package:flutter/material.dart';
 import '../app_controller.dart';
 import '../core/formatters.dart';
 import '../core/theme.dart';
+import '../data/torrent_metadata_parser.dart';
 import '../domain/models.dart';
 
 Future<void> showAddTorrentSheet(
   BuildContext context,
   SeedexController controller, {
   String initialMagnet = '',
+  String initialTorrentFile = '',
   String initialSourceUrl = '',
 }) {
   return showModalBottomSheet<void>(
@@ -18,10 +23,11 @@ Future<void> showAddTorrentSheet(
     isScrollControlled: true,
     useSafeArea: true,
     builder: (BuildContext context) => FractionallySizedBox(
-      heightFactor: 0.93,
+      heightFactor: 0.96,
       child: AddTorrentSheet(
         controller: controller,
         initialMagnet: initialMagnet,
+        initialTorrentFile: initialTorrentFile,
         initialSourceUrl: initialSourceUrl,
       ),
     ),
@@ -32,12 +38,14 @@ class AddTorrentSheet extends StatefulWidget {
   const AddTorrentSheet({
     required this.controller,
     this.initialMagnet = '',
+    this.initialTorrentFile = '',
     this.initialSourceUrl = '',
     super.key,
   });
 
   final SeedexController controller;
   final String initialMagnet;
+  final String initialTorrentFile;
   final String initialSourceUrl;
 
   @override
@@ -47,8 +55,12 @@ class AddTorrentSheet extends StatefulWidget {
 class _AddTorrentSheetState extends State<AddTorrentSheet> {
   late final TextEditingController _magnetController;
   late final TextEditingController _sourceController;
-  PlatformFile? _torrentFile;
-  int _mode = 0;
+  late int _inputMode;
+  String _torrentPath = '';
+  String _torrentName = '';
+  String _existingDataPath = '';
+  int _metadataBytes = 0;
+  TorrentStartMode _startMode = TorrentStartMode.downloadAndSeed;
   double _ratio = 1;
   bool _submitting = false;
   String _error = '';
@@ -58,6 +70,12 @@ class _AddTorrentSheetState extends State<AddTorrentSheet> {
     super.initState();
     _magnetController = TextEditingController(text: widget.initialMagnet);
     _sourceController = TextEditingController(text: widget.initialSourceUrl);
+    _inputMode = widget.initialTorrentFile.isEmpty ? 0 : 1;
+    _torrentPath = widget.initialTorrentFile;
+    _torrentName = _fileName(widget.initialTorrentFile);
+    if (_torrentPath.isNotEmpty) {
+      unawaited(_loadMetadataPreview(_torrentPath));
+    }
   }
 
   @override
@@ -72,8 +90,49 @@ class _AddTorrentSheetState extends State<AddTorrentSheet> {
       type: FileType.custom,
       allowedExtensions: const <String>['torrent'],
     );
+    final selectedPath = selected?.path;
+    if (selectedPath == null || selectedPath.isEmpty || !mounted) return;
+    setState(() {
+      _torrentPath = selectedPath;
+      _torrentName = selected?.name ?? _fileName(selectedPath);
+      _metadataBytes = 0;
+    });
+    await _loadMetadataPreview(selectedPath);
+  }
+
+  Future<void> _loadMetadataPreview(String filePath) async {
+    if (filePath.startsWith('content://') || filePath.startsWith('file://')) {
+      return;
+    }
+    try {
+      final hint = TorrentMetadataParser.parse(
+        await File(filePath).readAsBytes(),
+      );
+      if (!mounted || filePath != _torrentPath) return;
+      setState(() {
+        _metadataBytes = hint.totalBytes;
+        if (hint.name.isNotEmpty) _torrentName = hint.name;
+      });
+    } on Object {
+      // libtorrent performs the authoritative validation on import.
+    }
+  }
+
+  String _fileName(String value) {
+    if (value.isEmpty) return '';
+    final uri = Uri.tryParse(value);
+    final parsedPath = uri?.path ?? '';
+    final pathValue = parsedPath.isNotEmpty ? parsedPath : value;
+    final segments = pathValue.split('/').where((String item) {
+      return item.isNotEmpty;
+    }).toList();
+    return segments.isEmpty ? 'Shared torrent file' : segments.last;
+  }
+
+  Future<void> _pickExistingDataFolder() async {
+    final selected = await FilePicker.getDirectoryPath();
     if (selected != null && mounted) {
-      setState(() => _torrentFile = selected);
+      setState(() => _existingDataPath = selected);
     }
   }
 
@@ -83,25 +142,29 @@ class _AddTorrentSheetState extends State<AddTorrentSheet> {
       _error = '';
     });
     try {
-      if (_mode == 0) {
+      if (_inputMode == 0) {
         final typedSource = _sourceController.text.trim();
-        final isSharedSource = widget.initialSourceUrl.isNotEmpty &&
+        final isSharedSource =
+            widget.initialSourceUrl.isNotEmpty &&
             typedSource == widget.initialSourceUrl;
         await widget.controller.addMagnet(
           magnet: _magnetController.text,
           sourceUrl: isSharedSource ? typedSource : '',
           manualSource: isSharedSource ? '' : typedSource,
           ratioTarget: _ratio,
+          startMode: _startMode,
+          existingDataPath: _existingDataPath,
         );
       } else {
-        final selectedPath = _torrentFile?.path;
-        if (selectedPath == null || selectedPath.isEmpty) {
+        if (_torrentPath.isEmpty) {
           throw const FormatException('Choose a .torrent file first.');
         }
         await widget.controller.addTorrentFile(
-          originalPath: selectedPath,
+          originalPath: _torrentPath,
           manualSource: _sourceController.text.trim(),
           ratioTarget: _ratio,
+          startMode: _startMode,
+          existingDataPath: _existingDataPath,
         );
       }
       if (mounted) Navigator.of(context).pop();
@@ -111,7 +174,8 @@ class _AddTorrentSheetState extends State<AddTorrentSheet> {
         _error = error
             .toString()
             .replaceFirst('FormatException: ', '')
-            .replaceFirst('FileSystemException: ', '');
+            .replaceFirst('FileSystemException: ', '')
+            .replaceFirst('TelegramApiException: ', '');
         _submitting = false;
       });
     }
@@ -120,6 +184,7 @@ class _AddTorrentSheetState extends State<AddTorrentSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final usingExisting = _startMode == TorrentStartMode.existingData;
     return Padding(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -133,7 +198,10 @@ class _AddTorrentSheetState extends State<AddTorrentSheet> {
           Row(
             children: <Widget>[
               Expanded(
-                child: Text('Add torrent', style: theme.textTheme.headlineMedium),
+                child: Text(
+                  'Add torrent',
+                  style: theme.textTheme.headlineMedium,
+                ),
               ),
               IconButton(
                 tooltip: 'Close',
@@ -147,35 +215,73 @@ class _AddTorrentSheetState extends State<AddTorrentSheet> {
             child: ListView(
               physics: const BouncingScrollPhysics(),
               children: <Widget>[
+                Text(
+                  'How should Seedex start?',
+                  style: theme.textTheme.titleMedium,
+                ),
+                const SizedBox(height: 10),
+                CupertinoSlidingSegmentedControl<TorrentStartMode>(
+                  groupValue: _startMode,
+                  thumbColor:
+                      theme.cardTheme.color ?? theme.colorScheme.surface,
+                  onValueChanged: (TorrentStartMode? value) {
+                    if (value != null) setState(() => _startMode = value);
+                  },
+                  children: const <TorrentStartMode, Widget>{
+                    TorrentStartMode.downloadAndSeed: Padding(
+                      padding: EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 10,
+                      ),
+                      child: Text('Download & seed'),
+                    ),
+                    TorrentStartMode.existingData: Padding(
+                      padding: EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 10,
+                      ),
+                      child: Text('I have the files'),
+                    ),
+                  },
+                ),
+                const SizedBox(height: 14),
+                _ModeExplanation(existingData: usingExisting),
+                const SizedBox(height: 22),
+                Text('Torrent metadata', style: theme.textTheme.titleMedium),
+                const SizedBox(height: 10),
                 CupertinoSlidingSegmentedControl<int>(
-                  groupValue: _mode,
+                  groupValue: _inputMode,
                   thumbColor:
                       theme.cardTheme.color ?? theme.colorScheme.surface,
                   onValueChanged: (int? value) {
-                    if (value != null) setState(() => _mode = value);
+                    if (value != null) setState(() => _inputMode = value);
                   },
                   children: const <int, Widget>{
                     0: Padding(
-                      padding:
-                          EdgeInsets.symmetric(vertical: 10, horizontal: 18),
+                      padding: EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 18,
+                      ),
                       child: Text('Magnet link'),
                     ),
                     1: Padding(
-                      padding:
-                          EdgeInsets.symmetric(vertical: 10, horizontal: 18),
+                      padding: EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 18,
+                      ),
                       child: Text('.torrent file'),
                     ),
                   },
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 18),
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 220),
-                  child: _mode == 0
+                  child: _inputMode == 0
                       ? TextField(
                           key: const ValueKey<String>('magnet'),
                           controller: _magnetController,
-                          minLines: 4,
-                          maxLines: 7,
+                          minLines: 3,
+                          maxLines: 6,
                           keyboardType: TextInputType.url,
                           autocorrect: false,
                           decoration: const InputDecoration(
@@ -185,10 +291,19 @@ class _AddTorrentSheetState extends State<AddTorrentSheet> {
                           ),
                         )
                       : _FilePickerCard(
-                          file: _torrentFile,
+                          fileName: _torrentName,
                           onPressed: _pickTorrent,
                         ),
                 ),
+                const SizedBox(height: 10),
+                Text(_storageMessage, style: theme.textTheme.labelMedium),
+                if (usingExisting) ...<Widget>[
+                  const SizedBox(height: 18),
+                  _FolderPickerCard(
+                    path: _existingDataPath,
+                    onPressed: _pickExistingDataFolder,
+                  ),
+                ],
                 const SizedBox(height: 18),
                 TextField(
                   controller: _sourceController,
@@ -222,44 +337,21 @@ class _AddTorrentSheetState extends State<AddTorrentSheet> {
                   }).toList(),
                 ),
                 const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      Icon(
-                        CupertinoIcons.folder,
-                        color: theme.colorScheme.primary,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 11),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Text('Save to', style: theme.textTheme.labelMedium),
-                            const SizedBox(height: 2),
-                            Text(
-                              widget.controller.settings.downloadPath,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                _SavePathCard(
+                  title: usingExisting ? 'Verify files in' : 'Download to',
+                  path: usingExisting
+                      ? (_existingDataPath.isEmpty
+                            ? 'Choose an existing content folder'
+                            : _existingDataPath)
+                      : widget.controller.settings.downloadPath,
                 ),
                 if (_error.isNotEmpty) ...<Widget>[
                   const SizedBox(height: 14),
                   Text(
                     _error,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(color: SeedexPalette.red),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: SeedexPalette.red,
+                    ),
                   ),
                 ],
                 const SizedBox(height: 18),
@@ -284,7 +376,65 @@ class _AddTorrentSheetState extends State<AddTorrentSheet> {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('Start torrent'),
+                  : Text(
+                      usingExisting ? 'Verify files & seed' : 'Download & seed',
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String get _storageMessage {
+    if (_metadataBytes > 0) {
+      return 'Content size: ${formatBytes(_metadataBytes)}. Keep at least this '
+          'much storage available.';
+    }
+    if (_inputMode == 0) {
+      return 'A magnet contains metadata only. Content size appears after '
+          'metadata is fetched.';
+    }
+    return 'A .torrent file contains metadata only. Content size will be '
+        'checked during import.';
+  }
+}
+
+class _ModeExplanation extends StatelessWidget {
+  const _ModeExplanation({required this.existingData});
+
+  final bool existingData;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Icon(
+            existingData
+                ? CupertinoIcons.checkmark_shield_fill
+                : CupertinoIcons.arrow_down_circle_fill,
+            color: theme.colorScheme.primary,
+            size: 21,
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Text(
+              existingData
+                  ? 'Metadata alone cannot seed. Seedex hash-checks the exact '
+                        'files in your selected folder and starts seeding only '
+                        'after verification reaches 100%.'
+                  : 'Metadata alone cannot seed. Seedex downloads the real '
+                        'pieces, can upload completed pieces while downloading, '
+                        'and becomes a full seeder at 100%.',
+              style: theme.textTheme.bodyMedium,
             ),
           ),
         ],
@@ -294,9 +444,9 @@ class _AddTorrentSheetState extends State<AddTorrentSheet> {
 }
 
 class _FilePickerCard extends StatelessWidget {
-  const _FilePickerCard({required this.file, required this.onPressed});
+  const _FilePickerCard({required this.fileName, required this.onPressed});
 
-  final PlatformFile? file;
+  final String fileName;
   final VoidCallback onPressed;
 
   @override
@@ -317,28 +467,131 @@ class _FilePickerCard extends StatelessWidget {
         child: Column(
           children: <Widget>[
             Icon(
-              file == null
+              fileName.isEmpty
                   ? CupertinoIcons.doc_fill
                   : CupertinoIcons.doc_checkmark_fill,
-              color: file == null
+              color: fileName.isEmpty
                   ? theme.colorScheme.primary
                   : SeedexPalette.green,
               size: 34,
             ),
             const SizedBox(height: 12),
             Text(
-              file?.name ?? 'Choose a .torrent file',
+              fileName.isEmpty ? 'Choose a .torrent file' : fileName,
               style: theme.textTheme.titleMedium,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
             Text(
-              file == null ? 'Tap to browse this device' : 'Ready to import',
+              fileName.isEmpty
+                  ? 'Tap to browse this device'
+                  : 'Ready to import',
               style: theme.textTheme.labelMedium,
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _FolderPickerCard extends StatelessWidget {
+  const _FolderPickerCard({required this.path, required this.onPressed});
+
+  final String path;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onPressed,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: theme.cardTheme.color,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: theme.dividerColor),
+        ),
+        child: Row(
+          children: <Widget>[
+            Icon(
+              path.isEmpty
+                  ? CupertinoIcons.folder_badge_plus
+                  : CupertinoIcons.folder_fill,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    path.isEmpty
+                        ? 'Choose existing content folder'
+                        : 'Existing content folder',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    path.isEmpty ? 'Required for verification' : path,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelMedium,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(CupertinoIcons.chevron_forward, size: 17),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SavePathCard extends StatelessWidget {
+  const _SavePathCard({required this.title, required this.path});
+
+  final String title;
+  final String path;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: <Widget>[
+          Icon(
+            CupertinoIcons.folder,
+            color: theme.colorScheme.primary,
+            size: 20,
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(title, style: theme.textTheme.labelMedium),
+                const SizedBox(height: 2),
+                Text(
+                  path,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -463,8 +716,9 @@ class _CreateGoalSheetState extends State<CreateGoalSheet> {
                 Expanded(
                   child: TextField(
                     controller: _amount,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     decoration: const InputDecoration(labelText: 'Target'),
                     onChanged: (_) => _updateSuggestedTitle(),
                   ),
@@ -506,8 +760,8 @@ class _CreateGoalSheetState extends State<CreateGoalSheet> {
                   context: context,
                   firstDate: DateTime.now(),
                   lastDate: DateTime.now().add(const Duration(days: 3650)),
-                  initialDate: _deadline ??
-                      DateTime.now().add(const Duration(days: 30)),
+                  initialDate:
+                      _deadline ?? DateTime.now().add(const Duration(days: 30)),
                 );
                 if (selected != null && mounted) {
                   setState(() => _deadline = selected);
@@ -527,8 +781,9 @@ class _CreateGoalSheetState extends State<CreateGoalSheet> {
               const SizedBox(height: 12),
               Text(
                 _error,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: SeedexPalette.red),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: SeedexPalette.red,
+                ),
               ),
             ],
             const SizedBox(height: 22),

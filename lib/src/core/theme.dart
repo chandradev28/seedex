@@ -35,8 +35,12 @@ class SeedexTheme {
     final canvas = dark ? SeedexPalette.darkCanvas : SeedexPalette.canvas;
     final surface = dark ? SeedexPalette.darkSurface : SeedexPalette.surface;
     final ink = dark ? Colors.white : SeedexPalette.ink;
-    final secondary = dark ? Colors.white.withValues(alpha: 0.65) : SeedexPalette.secondary;
-    final border = dark ? Colors.white.withValues(alpha: 0.14) : SeedexPalette.border;
+    final secondary = dark
+        ? Colors.white.withValues(alpha: 0.65)
+        : SeedexPalette.secondary;
+    final border = dark
+        ? Colors.white.withValues(alpha: 0.14)
+        : SeedexPalette.border;
 
     final base = ThemeData(
       useMaterial3: true,
@@ -158,7 +162,10 @@ class SeedexTheme {
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: SeedexPalette.blue, width: 1.5),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 15,
+        ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: canvas,
@@ -190,7 +197,9 @@ class SeedexTheme {
               ? SeedexPalette.green
               : (dark ? Colors.white24 : const Color(0xFFD1D1D6));
         }),
-        trackOutlineColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
+        trackOutlineColor: const WidgetStatePropertyAll<Color>(
+          Colors.transparent,
+        ),
       ),
     );
   }
