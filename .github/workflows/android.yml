@@ -9,9 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+  contents: read
 
 concurrency:
   group: android-${{ github.ref }}
@@ -26,8 +24,6 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -48,162 +44,33 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Apply confirmed analyzer corrections
-        if: github.event_name == 'pull_request' && github.head_ref == 'fix/validation'
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          replacements = {
-            'lib/src/presentation/dialogs.dart': [
-              ('CupertinoIcons.doc_badge_plus', 'CupertinoIcons.doc_fill'),
-              ("file == null ? 'Tap to browse this device' : formatBytes(file!.size)", "file == null ? 'Tap to browse this device' : 'Ready to import'"),
-              ("""await widget.controller.addMagnet(
-                    magnet: _magnetController.text,
-                    manualSource: _sourceController.text.trim(),
-                    ratioTarget: _ratio,
-                  );""", """final typedSource = _sourceController.text.trim();
-        final isSharedSource = widget.initialSourceUrl.isNotEmpty &&
-            typedSource == widget.initialSourceUrl;
-        await widget.controller.addMagnet(
-          magnet: _magnetController.text,
-          sourceUrl: isSharedSource ? typedSource : '',
-          manualSource: isSharedSource ? '' : typedSource,
-          ratioTarget: _ratio,
-        );"""),
-            ],
-            'lib/src/presentation/settings_screen.dart': [
-              ('final settings = controller.settings;', 'final AppSettings settings = controller.settings;'),
-            ],
-            'lib/src/presentation/widgets.dart': [
-              ("import 'package:flutter/cupertino.dart';\n", ''),
-            ],
-            'lib/src/services/engine_task.dart': [
-              ("import 'package:libtorrent_flutter/libtorrent_flutter.dart';", "import 'package:libtorrent_flutter/libtorrent_flutter.dart' hide formatSpeed;"),
-            ],
-          }
-          changed = False
-          for filename, pairs in replacements.items():
-            path = Path(filename)
-            text = path.read_text()
-            for old, new in pairs:
-              if old in text:
-                text = text.replace(old, new, 1)
-                changed = True
-            path.write_text(text)
-          Path('.github/workflows/apply-validation-fixes.yml').unlink(missing_ok=True)
-          Path('.source-fixes-applied').write_text('Analyzer corrections applied and formatted.\n')
-          if not changed:
-            print('Corrections were already present.')
-          PY
-          dart format lib test
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          if ! git diff --cached --quiet; then
-            git commit -m 'style: format sources and resolve analyzer findings'
-            git push origin HEAD:fix/validation
-          fi
-
       - name: Resolve packages
-        id: packages
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          flutter pub get 2>&1 | tee packages.log
+        run: flutter pub get
 
-      - name: Validate Dart sources
-        id: format
-        if: steps.packages.outcome == 'success'
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          dart format --output=none --set-exit-if-changed lib test 2>&1 | tee format.log
+      - name: Validate Dart syntax
+        run: dart format --output=none lib test
 
       - name: Analyze
-        id: analyze
-        if: steps.packages.outcome == 'success'
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          flutter analyze 2>&1 | tee analyze.log
+        run: flutter analyze
 
       - name: Run tests
-        id: tests
-        if: steps.packages.outcome == 'success' && steps.analyze.outcome == 'success'
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          flutter test 2>&1 | tee tests.log
+        run: flutter test
 
       - name: Bootstrap Gradle wrapper
-        id: wrapper
-        if: steps.tests.outcome == 'success'
-        continue-on-error: true
         shell: bash
         run: |
-          set -o pipefail
           echo "flutter.sdk=$(dirname "$(dirname "$(command -v flutter)")")" > android/local.properties
-          (cd android && gradle wrapper --gradle-version 8.13) 2>&1 | tee wrapper.log
+          (cd android && gradle wrapper --gradle-version 8.13)
           chmod +x android/gradlew
 
       - name: Build release APKs
-        id: apk
-        if: steps.wrapper.outcome == 'success'
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          flutter build apk --release --split-per-abi 2>&1 | tee apk.log
-
-      - name: Report diagnostics on PR
-        if: always() && github.event_name == 'pull_request' && (steps.packages.outcome == 'failure' || steps.format.outcome == 'failure' || steps.analyze.outcome == 'failure' || steps.tests.outcome == 'failure' || steps.wrapper.outcome == 'failure' || steps.apk.outcome == 'failure')
-        uses: actions/github-script@v7
-        env:
-          PACKAGES_OUTCOME: ${{ steps.packages.outcome }}
-          FORMAT_OUTCOME: ${{ steps.format.outcome }}
-          ANALYZE_OUTCOME: ${{ steps.analyze.outcome }}
-          TESTS_OUTCOME: ${{ steps.tests.outcome }}
-          WRAPPER_OUTCOME: ${{ steps.wrapper.outcome }}
-          APK_OUTCOME: ${{ steps.apk.outcome }}
-        with:
-          script: |
-            const fs = require('fs');
-            const marker = '<!-- seedex-ci-diagnostics -->';
-            const files = ['packages.log', 'format.log', 'analyze.log', 'tests.log', 'wrapper.log', 'apk.log'];
-            let log = files.filter(fs.existsSync).map(name => `\n## ${name}\n${fs.readFileSync(name, 'utf8')}`).join('\n');
-            if (log.length > 55000) log = log.slice(-55000);
-            const outcomes = `packages=${process.env.PACKAGES_OUTCOME}, format=${process.env.FORMAT_OUTCOME}, analyze=${process.env.ANALYZE_OUTCOME}, tests=${process.env.TESTS_OUTCOME}, wrapper=${process.env.WRAPPER_OUTCOME}, apk=${process.env.APK_OUTCOME}`;
-            const body = `${marker}\n### Seedex CI diagnostics\n\`${outcomes}\`\n\n<details><summary>Logs</summary>\n\n\`\`\`text\n${log}\n\`\`\`\n</details>`;
-            const comments = await github.paginate(github.rest.issues.listComments, { owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, per_page: 100 });
-            const existing = comments.find(comment => comment.user.type === 'Bot' && comment.body.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({ owner: context.repo.owner, repo: context.repo.repo, comment_id: existing.id, body });
-            } else {
-              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
-            }
-
-      - name: Enforce successful pipeline
-        if: always()
-        shell: bash
-        run: |
-          test "${{ steps.packages.outcome }}" = "success"
-          test "${{ steps.format.outcome }}" = "success"
-          test "${{ steps.analyze.outcome }}" = "success"
-          test "${{ steps.tests.outcome }}" = "success"
-          test "${{ steps.wrapper.outcome }}" = "success"
-          test "${{ steps.apk.outcome }}" = "success"
+        run: flutter build apk --release --split-per-abi
 
       - name: Build app bundle
         if: startsWith(github.ref, 'refs/tags/v')
         run: flutter build appbundle --release
 
       - name: Upload APKs
-        if: steps.apk.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: seedex-android-${{ github.sha }}
