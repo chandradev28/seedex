@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 enum TorrentInputType { magnet, file }
 
+enum TorrentStartMode { downloadAndSeed, existingData }
+
 enum SourceConfidence { exact, manual, tracker, unknown }
 
 enum GoalMetric { uploadedBytes, overallRatio, torrentsAtOne, seedingHours }
@@ -14,6 +16,7 @@ class TorrentRecord {
     required this.displayName,
     required this.savePath,
     required this.addedAt,
+    this.startMode = TorrentStartMode.downloadAndSeed,
     this.sourceDomain = '',
     this.sourceUrl = '',
     this.sourceConfidence = SourceConfidence.unknown,
@@ -40,6 +43,7 @@ class TorrentRecord {
   final String displayName;
   final String savePath;
   final DateTime addedAt;
+  final TorrentStartMode startMode;
   final String sourceDomain;
   final String sourceUrl;
   final SourceConfidence sourceConfidence;
@@ -76,6 +80,8 @@ class TorrentRecord {
 
   bool get isSeeding => status.toLowerCase() == 'seeding';
 
+  bool get usesExistingData => startMode == TorrentStartMode.existingData;
+
   bool get isActive {
     final normalized = status.toLowerCase();
     return !paused &&
@@ -88,6 +94,7 @@ class TorrentRecord {
   TorrentRecord copyWith({
     String? displayName,
     String? savePath,
+    TorrentStartMode? startMode,
     String? sourceDomain,
     String? sourceUrl,
     SourceConfidence? sourceConfidence,
@@ -114,6 +121,7 @@ class TorrentRecord {
       displayName: displayName ?? this.displayName,
       savePath: savePath ?? this.savePath,
       addedAt: addedAt,
+      startMode: startMode ?? this.startMode,
       sourceDomain: sourceDomain ?? this.sourceDomain,
       sourceUrl: sourceUrl ?? this.sourceUrl,
       sourceConfidence: sourceConfidence ?? this.sourceConfidence,
@@ -142,6 +150,7 @@ class TorrentRecord {
         'displayName': displayName,
         'savePath': savePath,
         'addedAt': addedAt.toIso8601String(),
+        'startMode': startMode.name,
         'sourceDomain': sourceDomain,
         'sourceUrl': sourceUrl,
         'sourceConfidence': sourceConfidence.name,
@@ -175,6 +184,9 @@ class TorrentRecord {
       displayName: json['displayName'] as String? ?? 'Untitled torrent',
       savePath: json['savePath'] as String? ?? '',
       addedAt: DateTime.tryParse(json['addedAt'] as String? ?? '') ?? DateTime.now(),
+      startMode: TorrentStartMode.values.byName(
+        json['startMode'] as String? ?? TorrentStartMode.downloadAndSeed.name,
+      ),
       sourceDomain: json['sourceDomain'] as String? ?? '',
       sourceUrl: json['sourceUrl'] as String? ?? '',
       sourceConfidence: SourceConfidence.values.byName(
@@ -307,6 +319,10 @@ class AppSettings {
     this.continueAfterGoal = true,
     this.downloadPath = '',
     this.acceptedNotice = false,
+    this.telegramEnabled = false,
+    this.telegramRemoteCommands = true,
+    this.telegramCompletionNotifications = true,
+    this.telegramGoalNotifications = true,
   });
 
   final bool wifiOnly;
@@ -317,6 +333,10 @@ class AppSettings {
   final bool continueAfterGoal;
   final String downloadPath;
   final bool acceptedNotice;
+  final bool telegramEnabled;
+  final bool telegramRemoteCommands;
+  final bool telegramCompletionNotifications;
+  final bool telegramGoalNotifications;
 
   AppSettings copyWith({
     bool? wifiOnly,
@@ -327,6 +347,10 @@ class AppSettings {
     bool? continueAfterGoal,
     String? downloadPath,
     bool? acceptedNotice,
+    bool? telegramEnabled,
+    bool? telegramRemoteCommands,
+    bool? telegramCompletionNotifications,
+    bool? telegramGoalNotifications,
   }) {
     return AppSettings(
       wifiOnly: wifiOnly ?? this.wifiOnly,
@@ -337,6 +361,13 @@ class AppSettings {
       continueAfterGoal: continueAfterGoal ?? this.continueAfterGoal,
       downloadPath: downloadPath ?? this.downloadPath,
       acceptedNotice: acceptedNotice ?? this.acceptedNotice,
+      telegramEnabled: telegramEnabled ?? this.telegramEnabled,
+      telegramRemoteCommands:
+          telegramRemoteCommands ?? this.telegramRemoteCommands,
+      telegramCompletionNotifications: telegramCompletionNotifications ??
+          this.telegramCompletionNotifications,
+      telegramGoalNotifications:
+          telegramGoalNotifications ?? this.telegramGoalNotifications,
     );
   }
 
@@ -349,6 +380,10 @@ class AppSettings {
         'continueAfterGoal': continueAfterGoal,
         'downloadPath': downloadPath,
         'acceptedNotice': acceptedNotice,
+        'telegramEnabled': telegramEnabled,
+        'telegramRemoteCommands': telegramRemoteCommands,
+        'telegramCompletionNotifications': telegramCompletionNotifications,
+        'telegramGoalNotifications': telegramGoalNotifications,
       };
 
   factory AppSettings.fromJson(Map<String, Object?> json) => AppSettings(
@@ -360,6 +395,13 @@ class AppSettings {
         continueAfterGoal: json['continueAfterGoal'] as bool? ?? true,
         downloadPath: json['downloadPath'] as String? ?? '',
         acceptedNotice: json['acceptedNotice'] as bool? ?? false,
+        telegramEnabled: json['telegramEnabled'] as bool? ?? false,
+        telegramRemoteCommands:
+            json['telegramRemoteCommands'] as bool? ?? true,
+        telegramCompletionNotifications:
+            json['telegramCompletionNotifications'] as bool? ?? true,
+        telegramGoalNotifications:
+            json['telegramGoalNotifications'] as bool? ?? true,
       );
 }
 

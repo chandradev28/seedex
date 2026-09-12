@@ -1,7 +1,7 @@
 name: seedex
 description: A private, standalone Android torrent seeding portfolio.
 publish_to: none
-version: 0.1.0+1
+version: 0.2.0+2
 
 environment:
   sdk: '>=3.5.0 <4.0.0'
@@ -16,6 +16,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   file_picker: ^12.2.0
   flutter_foreground_task: ^11.0.3
+  flutter_secure_storage: ^11.1.0
   libtorrent_flutter: ^2.0.0
   path: ^1.9.1
   path_provider: ^2.1.5
