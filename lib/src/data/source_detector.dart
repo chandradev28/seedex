@@ -16,12 +16,12 @@ class SourceDetector {
   const SourceDetector._();
 
   static final RegExp _magnetPattern = RegExp(
-    r'magnet:\?[^\s<>"\']+',
+    r'''magnet:\?[^\s<>"']+''',
     caseSensitive: false,
   );
 
   static final RegExp _webPattern = RegExp(
-    r'https?://[^\s<>"\']+',
+    r'''https?://[^\s<>"']+''',
     caseSensitive: false,
   );
 
@@ -51,7 +51,7 @@ class SourceDetector {
         if (domain.isNotEmpty) trackers.add(domain);
       }
     } on FormatException {
-      // Validation is handled by the add flow. Source attribution stays unknown.
+      // Validation is handled by the add flow. Attribution stays unknown.
     }
 
     final exactUrl = sharedUrl.isNotEmpty ? sharedUrl : referrer;
