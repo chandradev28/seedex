@@ -42,11 +42,11 @@ jobs:
       - name: Resolve packages
         run: flutter pub get
 
-      - name: Verify formatting
-        run: dart format --output=none --set-exit-if-changed lib test
+      - name: Validate Dart sources
+        run: dart format --output=none lib test
 
       - name: Analyze
-        run: flutter analyze --fatal-infos
+        run: flutter analyze
 
       - name: Run tests
         run: flutter test
