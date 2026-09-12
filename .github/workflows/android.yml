@@ -10,6 +10,8 @@ on:
 
 permissions:
   contents: read
+  issues: write
+  pull-requests: write
 
 concurrency:
   group: android-${{ github.ref }}
@@ -45,32 +47,119 @@ jobs:
           cache: true
 
       - name: Resolve packages
-        run: flutter pub get
-
-      - name: Validate Dart sources
-        run: dart format --output=none lib test
-
-      - name: Analyze
-        run: flutter analyze
-
-      - name: Run tests
-        run: flutter test
-
-      - name: Bootstrap Gradle wrapper
+        id: packages
+        continue-on-error: true
         shell: bash
         run: |
+          set -o pipefail
+          flutter pub get 2>&1 | tee packages.log
+
+      - name: Validate Dart sources
+        id: format
+        if: steps.packages.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          dart format --output=none lib test 2>&1 | tee format.log
+
+      - name: Analyze
+        id: analyze
+        if: steps.packages.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          flutter analyze 2>&1 | tee analyze.log
+
+      - name: Run tests
+        id: tests
+        if: steps.packages.outcome == 'success' && steps.analyze.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          flutter test 2>&1 | tee tests.log
+
+      - name: Bootstrap Gradle wrapper
+        id: wrapper
+        if: steps.tests.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
           echo "flutter.sdk=$(dirname "$(dirname "$(command -v flutter)")")" > android/local.properties
-          (cd android && gradle wrapper --gradle-version 8.13)
+          (cd android && gradle wrapper --gradle-version 8.13) 2>&1 | tee wrapper.log
           chmod +x android/gradlew
 
       - name: Build release APKs
-        run: flutter build apk --release --split-per-abi
+        id: apk
+        if: steps.wrapper.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          flutter build apk --release --split-per-abi 2>&1 | tee apk.log
+
+      - name: Report diagnostics on PR
+        if: always() && github.event_name == 'pull_request' && (steps.packages.outcome == 'failure' || steps.format.outcome == 'failure' || steps.analyze.outcome == 'failure' || steps.tests.outcome == 'failure' || steps.wrapper.outcome == 'failure' || steps.apk.outcome == 'failure')
+        uses: actions/github-script@v7
+        env:
+          PACKAGES_OUTCOME: ${{ steps.packages.outcome }}
+          FORMAT_OUTCOME: ${{ steps.format.outcome }}
+          ANALYZE_OUTCOME: ${{ steps.analyze.outcome }}
+          TESTS_OUTCOME: ${{ steps.tests.outcome }}
+          WRAPPER_OUTCOME: ${{ steps.wrapper.outcome }}
+          APK_OUTCOME: ${{ steps.apk.outcome }}
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- seedex-ci-diagnostics -->';
+            const files = ['packages.log', 'format.log', 'analyze.log', 'tests.log', 'wrapper.log', 'apk.log'];
+            let log = files.filter(fs.existsSync).map(name => `\n## ${name}\n${fs.readFileSync(name, 'utf8')}`).join('\n');
+            if (log.length > 55000) log = log.slice(-55000);
+            const outcomes = `packages=${process.env.PACKAGES_OUTCOME}, format=${process.env.FORMAT_OUTCOME}, analyze=${process.env.ANALYZE_OUTCOME}, tests=${process.env.TESTS_OUTCOME}, wrapper=${process.env.WRAPPER_OUTCOME}, apk=${process.env.APK_OUTCOME}`;
+            const body = `${marker}\n### Seedex CI diagnostics\n\`${outcomes}\`\n\n<details><summary>Logs</summary>\n\n\`\`\`text\n${log}\n\`\`\`\n</details>`;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+            const existing = comments.find(comment => comment.user.type === 'Bot' && comment.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Enforce successful pipeline
+        if: always()
+        shell: bash
+        run: |
+          test "${{ steps.packages.outcome }}" = "success"
+          test "${{ steps.format.outcome }}" = "success"
+          test "${{ steps.analyze.outcome }}" = "success"
+          test "${{ steps.tests.outcome }}" = "success"
+          test "${{ steps.wrapper.outcome }}" = "success"
+          test "${{ steps.apk.outcome }}" = "success"
 
       - name: Build app bundle
         if: startsWith(github.ref, 'refs/tags/v')
         run: flutter build appbundle --release
 
       - name: Upload APKs
+        if: steps.apk.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: seedex-android-${{ github.sha }}
