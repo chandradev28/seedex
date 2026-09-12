@@ -37,6 +37,7 @@ android {
             // Replace with a private release signing config before publishing.
             signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
