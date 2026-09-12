@@ -30,10 +30,12 @@ class SeedexApp extends StatelessWidget {
         final overlay = SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
-          systemNavigationBarColor:
-              dark ? SeedexPalette.darkCanvas : SeedexPalette.surface,
-          systemNavigationBarIconBrightness:
-              dark ? Brightness.light : Brightness.dark,
+          systemNavigationBarColor: dark
+              ? SeedexPalette.darkCanvas
+              : SeedexPalette.surface,
+          systemNavigationBarIconBrightness: dark
+              ? Brightness.light
+              : Brightness.dark,
           systemNavigationBarDividerColor: Colors.transparent,
         );
         return AnnotatedRegion<SystemUiOverlayStyle>(

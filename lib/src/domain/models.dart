@@ -144,37 +144,38 @@ class TorrentRecord {
   }
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'id': id,
-        'inputType': inputType.name,
-        'inputValue': inputValue,
-        'displayName': displayName,
-        'savePath': savePath,
-        'addedAt': addedAt.toIso8601String(),
-        'startMode': startMode.name,
-        'sourceDomain': sourceDomain,
-        'sourceUrl': sourceUrl,
-        'sourceConfidence': sourceConfidence.name,
-        'trackers': trackers,
-        'paused': paused,
-        'status': status,
-        'progress': progress,
-        'totalDone': totalDone,
-        'totalWanted': totalWanted,
-        'uploadedBytes': uploadedBytes,
-        'downloadRate': downloadRate,
-        'uploadRate': uploadRate,
-        'peers': peers,
-        'seeds': seeds,
-        'error': error,
-        'ratioTarget': ratioTarget,
-        'uploadLedger': uploadLedger,
-        'seedingSeconds': seedingSeconds,
-      };
+    'id': id,
+    'inputType': inputType.name,
+    'inputValue': inputValue,
+    'displayName': displayName,
+    'savePath': savePath,
+    'addedAt': addedAt.toIso8601String(),
+    'startMode': startMode.name,
+    'sourceDomain': sourceDomain,
+    'sourceUrl': sourceUrl,
+    'sourceConfidence': sourceConfidence.name,
+    'trackers': trackers,
+    'paused': paused,
+    'status': status,
+    'progress': progress,
+    'totalDone': totalDone,
+    'totalWanted': totalWanted,
+    'uploadedBytes': uploadedBytes,
+    'downloadRate': downloadRate,
+    'uploadRate': uploadRate,
+    'peers': peers,
+    'seeds': seeds,
+    'error': error,
+    'ratioTarget': ratioTarget,
+    'uploadLedger': uploadLedger,
+    'seedingSeconds': seedingSeconds,
+  };
 
   factory TorrentRecord.fromJson(Map<String, Object?> json) {
     final rawTrackers = json['trackers'] as List<Object?>? ?? const <Object?>[];
     final rawLedger =
-        json['uploadLedger'] as Map<Object?, Object?>? ?? const <Object?, Object?>{};
+        json['uploadLedger'] as Map<Object?, Object?>? ??
+        const <Object?, Object?>{};
     return TorrentRecord(
       id: json['id'] as String,
       inputType: TorrentInputType.values.byName(
@@ -183,7 +184,8 @@ class TorrentRecord {
       inputValue: json['inputValue'] as String? ?? '',
       displayName: json['displayName'] as String? ?? 'Untitled torrent',
       savePath: json['savePath'] as String? ?? '',
-      addedAt: DateTime.tryParse(json['addedAt'] as String? ?? '') ?? DateTime.now(),
+      addedAt:
+          DateTime.tryParse(json['addedAt'] as String? ?? '') ?? DateTime.now(),
       startMode: TorrentStartMode.values.byName(
         json['startMode'] as String? ?? TorrentStartMode.downloadAndSeed.name,
       ),
@@ -206,10 +208,8 @@ class TorrentRecord {
       error: json['error'] as String? ?? '',
       ratioTarget: (json['ratioTarget'] as num? ?? 1).toDouble(),
       uploadLedger: rawLedger.map<String, int>(
-        (Object? key, Object? value) => MapEntry<String, int>(
-          key.toString(),
-          (value as num? ?? 0).toInt(),
-        ),
+        (Object? key, Object? value) =>
+            MapEntry<String, int>(key.toString(), (value as num? ?? 0).toInt()),
       ),
       seedingSeconds: (json['seedingSeconds'] as num? ?? 0).toInt(),
     );
@@ -248,40 +248,40 @@ class SeedGoal {
   }
 
   SeedGoal copyWith({DateTime? completedAt}) => SeedGoal(
-        id: id,
-        title: title,
-        metric: metric,
-        target: target,
-        baseline: baseline,
-        createdAt: createdAt,
-        deadline: deadline,
-        completedAt: completedAt ?? this.completedAt,
-      );
+    id: id,
+    title: title,
+    metric: metric,
+    target: target,
+    baseline: baseline,
+    createdAt: createdAt,
+    deadline: deadline,
+    completedAt: completedAt ?? this.completedAt,
+  );
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'id': id,
-        'title': title,
-        'metric': metric.name,
-        'target': target,
-        'baseline': baseline,
-        'createdAt': createdAt.toIso8601String(),
-        'deadline': deadline?.toIso8601String(),
-        'completedAt': completedAt?.toIso8601String(),
-      };
+    'id': id,
+    'title': title,
+    'metric': metric.name,
+    'target': target,
+    'baseline': baseline,
+    'createdAt': createdAt.toIso8601String(),
+    'deadline': deadline?.toIso8601String(),
+    'completedAt': completedAt?.toIso8601String(),
+  };
 
   factory SeedGoal.fromJson(Map<String, Object?> json) => SeedGoal(
-        id: json['id'] as String,
-        title: json['title'] as String? ?? 'Sharing goal',
-        metric: GoalMetric.values.byName(
-          json['metric'] as String? ?? GoalMetric.uploadedBytes.name,
-        ),
-        target: (json['target'] as num? ?? 0).toDouble(),
-        baseline: (json['baseline'] as num? ?? 0).toDouble(),
-        createdAt:
-            DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
-        deadline: DateTime.tryParse(json['deadline'] as String? ?? ''),
-        completedAt: DateTime.tryParse(json['completedAt'] as String? ?? ''),
-      );
+    id: json['id'] as String,
+    title: json['title'] as String? ?? 'Sharing goal',
+    metric: GoalMetric.values.byName(
+      json['metric'] as String? ?? GoalMetric.uploadedBytes.name,
+    ),
+    target: (json['target'] as num? ?? 0).toDouble(),
+    baseline: (json['baseline'] as num? ?? 0).toDouble(),
+    createdAt:
+        DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+    deadline: DateTime.tryParse(json['deadline'] as String? ?? ''),
+    completedAt: DateTime.tryParse(json['completedAt'] as String? ?? ''),
+  );
 }
 
 class ActivitySample {
@@ -296,17 +296,17 @@ class ActivitySample {
   final int uploadRate;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'timestamp': timestamp.toIso8601String(),
-        'downloadRate': downloadRate,
-        'uploadRate': uploadRate,
-      };
+    'timestamp': timestamp.toIso8601String(),
+    'downloadRate': downloadRate,
+    'uploadRate': uploadRate,
+  };
 
   factory ActivitySample.fromJson(Map<String, Object?> json) => ActivitySample(
-        timestamp:
-            DateTime.tryParse(json['timestamp'] as String? ?? '') ?? DateTime.now(),
-        downloadRate: (json['downloadRate'] as num? ?? 0).toInt(),
-        uploadRate: (json['uploadRate'] as num? ?? 0).toInt(),
-      );
+    timestamp:
+        DateTime.tryParse(json['timestamp'] as String? ?? '') ?? DateTime.now(),
+    downloadRate: (json['downloadRate'] as num? ?? 0).toInt(),
+    uploadRate: (json['uploadRate'] as num? ?? 0).toInt(),
+  );
 }
 
 class AppSettings {
@@ -364,7 +364,8 @@ class AppSettings {
       telegramEnabled: telegramEnabled ?? this.telegramEnabled,
       telegramRemoteCommands:
           telegramRemoteCommands ?? this.telegramRemoteCommands,
-      telegramCompletionNotifications: telegramCompletionNotifications ??
+      telegramCompletionNotifications:
+          telegramCompletionNotifications ??
           this.telegramCompletionNotifications,
       telegramGoalNotifications:
           telegramGoalNotifications ?? this.telegramGoalNotifications,
@@ -372,37 +373,36 @@ class AppSettings {
   }
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'wifiOnly': wifiOnly,
-        'cellularAllowed': cellularAllowed,
-        'downloadLimit': downloadLimit,
-        'uploadLimit': uploadLimit,
-        'darkMode': darkMode,
-        'continueAfterGoal': continueAfterGoal,
-        'downloadPath': downloadPath,
-        'acceptedNotice': acceptedNotice,
-        'telegramEnabled': telegramEnabled,
-        'telegramRemoteCommands': telegramRemoteCommands,
-        'telegramCompletionNotifications': telegramCompletionNotifications,
-        'telegramGoalNotifications': telegramGoalNotifications,
-      };
+    'wifiOnly': wifiOnly,
+    'cellularAllowed': cellularAllowed,
+    'downloadLimit': downloadLimit,
+    'uploadLimit': uploadLimit,
+    'darkMode': darkMode,
+    'continueAfterGoal': continueAfterGoal,
+    'downloadPath': downloadPath,
+    'acceptedNotice': acceptedNotice,
+    'telegramEnabled': telegramEnabled,
+    'telegramRemoteCommands': telegramRemoteCommands,
+    'telegramCompletionNotifications': telegramCompletionNotifications,
+    'telegramGoalNotifications': telegramGoalNotifications,
+  };
 
   factory AppSettings.fromJson(Map<String, Object?> json) => AppSettings(
-        wifiOnly: json['wifiOnly'] as bool? ?? true,
-        cellularAllowed: json['cellularAllowed'] as bool? ?? false,
-        downloadLimit: (json['downloadLimit'] as num? ?? 0).toInt(),
-        uploadLimit: (json['uploadLimit'] as num? ?? 0).toInt(),
-        darkMode: json['darkMode'] as bool? ?? false,
-        continueAfterGoal: json['continueAfterGoal'] as bool? ?? true,
-        downloadPath: json['downloadPath'] as String? ?? '',
-        acceptedNotice: json['acceptedNotice'] as bool? ?? false,
-        telegramEnabled: json['telegramEnabled'] as bool? ?? false,
-        telegramRemoteCommands:
-            json['telegramRemoteCommands'] as bool? ?? true,
-        telegramCompletionNotifications:
-            json['telegramCompletionNotifications'] as bool? ?? true,
-        telegramGoalNotifications:
-            json['telegramGoalNotifications'] as bool? ?? true,
-      );
+    wifiOnly: json['wifiOnly'] as bool? ?? true,
+    cellularAllowed: json['cellularAllowed'] as bool? ?? false,
+    downloadLimit: (json['downloadLimit'] as num? ?? 0).toInt(),
+    uploadLimit: (json['uploadLimit'] as num? ?? 0).toInt(),
+    darkMode: json['darkMode'] as bool? ?? false,
+    continueAfterGoal: json['continueAfterGoal'] as bool? ?? true,
+    downloadPath: json['downloadPath'] as String? ?? '',
+    acceptedNotice: json['acceptedNotice'] as bool? ?? false,
+    telegramEnabled: json['telegramEnabled'] as bool? ?? false,
+    telegramRemoteCommands: json['telegramRemoteCommands'] as bool? ?? true,
+    telegramCompletionNotifications:
+        json['telegramCompletionNotifications'] as bool? ?? true,
+    telegramGoalNotifications:
+        json['telegramGoalNotifications'] as bool? ?? true,
+  );
 }
 
 class AppSnapshot {

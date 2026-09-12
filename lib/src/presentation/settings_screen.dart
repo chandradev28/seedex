@@ -41,8 +41,7 @@ class SettingsScreen extends StatelessWidget {
                   onChanged: (bool value) => controller.updateSettings(
                     settings.copyWith(
                       wifiOnly: value,
-                      cellularAllowed:
-                          value ? false : settings.cellularAllowed,
+                      cellularAllowed: value ? false : settings.cellularAllowed,
                     ),
                   ),
                 ),
@@ -55,8 +54,8 @@ class SettingsScreen extends StatelessWidget {
                   onChanged: settings.wifiOnly
                       ? null
                       : (bool value) => controller.updateSettings(
-                            settings.copyWith(cellularAllowed: value),
-                          ),
+                          settings.copyWith(cellularAllowed: value),
+                        ),
                 ),
                 _SettingsAction(
                   icon: CupertinoIcons.speedometer,
@@ -64,9 +63,9 @@ class SettingsScreen extends StatelessWidget {
                   title: 'Speed limits',
                   value:
                       settings.downloadLimit == 0 && settings.uploadLimit == 0
-                          ? 'Unlimited'
-                          : '↓ ${formatSpeed(settings.downloadLimit)} · '
-                              '↑ ${formatSpeed(settings.uploadLimit)}',
+                      ? 'Unlimited'
+                      : '↓ ${formatSpeed(settings.downloadLimit)} · '
+                            '↑ ${formatSpeed(settings.uploadLimit)}',
                   onTap: () => _showSpeedLimits(context, controller),
                 ),
               ],
@@ -112,8 +111,8 @@ class SettingsScreen extends StatelessWidget {
                   title: 'Telegram bot',
                   value: telegramReady
                       ? (controller.telegramBotName.isEmpty
-                          ? 'Credentials encrypted on this device'
-                          : 'Connected to ${controller.telegramBotName}')
+                            ? 'Credentials encrypted on this device'
+                            : 'Connected to ${controller.telegramBotName}')
                       : 'Set up a private control bot',
                   onTap: () => _showTelegramSetup(context, controller),
                 ),
@@ -125,8 +124,8 @@ class SettingsScreen extends StatelessWidget {
                   value: telegramReady && settings.telegramEnabled,
                   onChanged: telegramReady
                       ? (bool value) => controller.updateSettings(
-                            settings.copyWith(telegramEnabled: value),
-                          )
+                          settings.copyWith(telegramEnabled: value),
+                        )
                       : null,
                 ),
                 _SettingsToggle(
@@ -137,8 +136,8 @@ class SettingsScreen extends StatelessWidget {
                   value: telegramReady && settings.telegramRemoteCommands,
                   onChanged: telegramReady && settings.telegramEnabled
                       ? (bool value) => controller.updateSettings(
-                            settings.copyWith(telegramRemoteCommands: value),
-                          )
+                          settings.copyWith(telegramRemoteCommands: value),
+                        )
                       : null,
                 ),
                 _SettingsToggle(
@@ -150,10 +149,10 @@ class SettingsScreen extends StatelessWidget {
                       telegramReady && settings.telegramCompletionNotifications,
                   onChanged: telegramReady && settings.telegramEnabled
                       ? (bool value) => controller.updateSettings(
-                            settings.copyWith(
-                              telegramCompletionNotifications: value,
-                            ),
-                          )
+                          settings.copyWith(
+                            telegramCompletionNotifications: value,
+                          ),
+                        )
                       : null,
                 ),
                 _SettingsToggle(
@@ -164,10 +163,8 @@ class SettingsScreen extends StatelessWidget {
                   value: telegramReady && settings.telegramGoalNotifications,
                   onChanged: telegramReady && settings.telegramEnabled
                       ? (bool value) => controller.updateSettings(
-                            settings.copyWith(
-                              telegramGoalNotifications: value,
-                            ),
-                          )
+                          settings.copyWith(telegramGoalNotifications: value),
+                        )
                       : null,
                 ),
               ],
@@ -236,8 +233,7 @@ class SettingsScreen extends StatelessWidget {
                     context: context,
                     applicationName: 'Seedex',
                     applicationVersion: '0.2.0',
-                    applicationLegalese:
-                        'GPL-3.0 · Built for lawful sharing',
+                    applicationLegalese: 'GPL-3.0 · Built for lawful sharing',
                   ),
                 ),
                 const _SettingsInfo(
@@ -326,18 +322,22 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 18),
             TextField(
               controller: down,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration:
-                  const InputDecoration(labelText: 'Download limit · MB/s'),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Download limit · MB/s',
+              ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: up,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration:
-                  const InputDecoration(labelText: 'Upload limit · MB/s'),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Upload limit · MB/s',
+              ),
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -345,10 +345,10 @@ class SettingsScreen extends StatelessWidget {
               height: 52,
               child: FilledButton(
                 onPressed: () {
-                  final download =
-                      ((double.tryParse(down.text) ?? 0) * 1000000).round();
-                  final upload =
-                      ((double.tryParse(up.text) ?? 0) * 1000000).round();
+                  final download = ((double.tryParse(down.text) ?? 0) * 1000000)
+                      .round();
+                  final upload = ((double.tryParse(up.text) ?? 0) * 1000000)
+                      .round();
                   controller.updateSettings(
                     controller.settings.copyWith(
                       downloadLimit: download,
@@ -376,9 +376,8 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (BuildContext context) => _TelegramSetupSheet(
-        controller: controller,
-      ),
+      builder: (BuildContext context) =>
+          _TelegramSetupSheet(controller: controller),
     );
   }
 }
@@ -549,11 +548,11 @@ class _TelegramSetupSheetState extends State<_TelegramSetupSheet> {
                     onPressed: _busy
                         ? null
                         : () => _run(
-                              () => widget.controller.testTelegramCredentials(
-                                botToken: _token.text,
-                                chatId: _chatId.text,
-                              ),
+                            () => widget.controller.testTelegramCredentials(
+                              botToken: _token.text,
+                              chatId: _chatId.text,
                             ),
+                          ),
                     child: const Text('Test'),
                   ),
                 ),
@@ -564,11 +563,11 @@ class _TelegramSetupSheetState extends State<_TelegramSetupSheet> {
                     onPressed: _busy
                         ? null
                         : () => _run(
-                              () => widget.controller.configureTelegram(
-                                botToken: _token.text,
-                                chatId: _chatId.text,
-                              ),
+                            () => widget.controller.configureTelegram(
+                              botToken: _token.text,
+                              chatId: _chatId.text,
                             ),
+                          ),
                     child: _busy
                         ? const SizedBox.square(
                             dimension: 20,
@@ -634,18 +633,17 @@ class _SettingsSection extends StatelessWidget {
               border: Border.all(color: Theme.of(context).dividerColor),
             ),
             child: Column(
-              children: List<Widget>.generate(
-                children.length * 2 - 1,
-                (int index) {
-                  if (index.isOdd) {
-                    return const Padding(
-                      padding: EdgeInsets.only(left: 62),
-                      child: Divider(),
-                    );
-                  }
-                  return children[index ~/ 2];
-                },
-              ),
+              children: List<Widget>.generate(children.length * 2 - 1, (
+                int index,
+              ) {
+                if (index.isOdd) {
+                  return const Padding(
+                    padding: EdgeInsets.only(left: 62),
+                    child: Divider(),
+                  );
+                }
+                return children[index ~/ 2];
+              }),
             ),
           ),
         ],

@@ -19,11 +19,13 @@ class ActivityScreen extends StatelessWidget {
         : controller.activity;
     final peakDown = samples.fold<int>(
       0,
-      (int value, ActivitySample item) => item.downloadRate > value ? item.downloadRate : value,
+      (int value, ActivitySample item) =>
+          item.downloadRate > value ? item.downloadRate : value,
     );
     final peakUp = samples.fold<int>(
       0,
-      (int value, ActivitySample item) => item.uploadRate > value ? item.uploadRate : value,
+      (int value, ActivitySample item) =>
+          item.uploadRate > value ? item.uploadRate : value,
     );
 
     return SafeArea(
@@ -56,7 +58,10 @@ class ActivityScreen extends StatelessWidget {
                         const SizedBox(width: 16),
                         _Legend(color: SeedexPalette.green, label: 'Upload'),
                         const Spacer(),
-                        Text('Last 10 min', style: Theme.of(context).textTheme.labelMedium),
+                        Text(
+                          'Last 10 min',
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 18),
@@ -99,20 +104,28 @@ class ActivityScreen extends StatelessWidget {
               ],
             ),
           ),
-          const SliverToBoxAdapter(child: SectionHeader(title: 'How activity is measured')),
+          const SliverToBoxAdapter(
+            child: SectionHeader(title: 'How activity is measured'),
+          ),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.07),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.07),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Icon(CupertinoIcons.lock_fill, color: Theme.of(context).colorScheme.primary, size: 20),
+                    Icon(
+                      CupertinoIcons.lock_fill,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 20,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -142,7 +155,11 @@ class _Legend extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Container(width: 9, height: 9, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        Container(
+          width: 9,
+          height: 9,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
         const SizedBox(width: 6),
         Text(label, style: Theme.of(context).textTheme.labelMedium),
       ],

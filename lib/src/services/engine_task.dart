@@ -28,17 +28,11 @@ void startSeedexTask() {
   FlutterForegroundTask.setTaskHandler(SeedexTaskHandler());
 }
 
-enum _ExistingVerificationStage {
-  waitingMetadata,
-  checking,
-  verified,
-  failed,
-}
+enum _ExistingVerificationStage { waitingMetadata, checking, verified, failed }
 
 class SeedexTaskHandler extends TaskHandler {
   final LocalStore _store = LocalStore();
-  final TelegramCredentialsStore _credentialsStore =
-      TelegramCredentialsStore();
+  final TelegramCredentialsStore _credentialsStore = TelegramCredentialsStore();
   final Map<String, int> _engineIds = <String, int>{};
   final Map<String, TorrentRecord> _records = <String, TorrentRecord>{};
   final Map<int, TorrentInfo> _latest = <int, TorrentInfo>{};
@@ -79,8 +73,9 @@ class SeedexTaskHandler extends TaskHandler {
     await LibtorrentFlutter.init(
       downloadLimit: _settings.downloadLimit,
       uploadLimit: _settings.uploadLimit,
-      defaultSavePath:
-          _settings.downloadPath.isEmpty ? null : _settings.downloadPath,
+      defaultSavePath: _settings.downloadPath.isEmpty
+          ? null
+          : _settings.downloadPath,
       fetchTrackers: false,
       pollInterval: const Duration(milliseconds: 700),
     );
@@ -97,12 +92,12 @@ class SeedexTaskHandler extends TaskHandler {
 
     _connectivity = await Connectivity().checkConnectivity();
     await _applyNetworkPolicy();
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
-      (List<ConnectivityResult> result) {
-        _connectivity = result;
-        unawaited(_applyNetworkPolicy());
-      },
-    );
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
+      List<ConnectivityResult> result,
+    ) {
+      _connectivity = result;
+      unawaited(_applyNetworkPolicy());
+    });
     await _refreshTelegram();
     await _publish(forcePersist: true);
   }
@@ -155,10 +150,8 @@ class SeedexTaskHandler extends TaskHandler {
         final rawRecord = data['record'];
         if (rawRecord is Map<Object?, Object?>) {
           final json = rawRecord.map<String, Object?>(
-            (Object? key, Object? value) => MapEntry<String, Object?>(
-              key.toString(),
-              value,
-            ),
+            (Object? key, Object? value) =>
+                MapEntry<String, Object?>(key.toString(), value),
           );
           unawaited(_addRecord(TorrentRecord.fromJson(json)));
         }
@@ -183,10 +176,8 @@ class SeedexTaskHandler extends TaskHandler {
         if (rawSettings is Map<Object?, Object?>) {
           _settings = AppSettings.fromJson(
             rawSettings.map<String, Object?>(
-              (Object? key, Object? value) => MapEntry<String, Object?>(
-                key.toString(),
-                value,
-              ),
+              (Object? key, Object? value) =>
+                  MapEntry<String, Object?>(key.toString(), value),
             ),
           );
           _engine
@@ -221,17 +212,20 @@ class SeedexTaskHandler extends TaskHandler {
     _records[record.id] = record;
     try {
       final engineId = switch (record.inputType) {
-        TorrentInputType.magnet =>
-          _engine.addMagnet(record.inputValue, record.savePath),
-        TorrentInputType.file =>
-          _engine.addTorrentFile(record.inputValue, record.savePath),
+        TorrentInputType.magnet => _engine.addMagnet(
+          record.inputValue,
+          record.savePath,
+        ),
+        TorrentInputType.file => _engine.addTorrentFile(
+          record.inputValue,
+          record.savePath,
+        ),
       };
       _engineIds[record.id] = engineId;
 
       if (record.startMode == TorrentStartMode.existingData) {
         if (record.inputType == TorrentInputType.magnet) {
-          _verification[record.id] =
-              _ExistingVerificationStage.waitingMetadata;
+          _verification[record.id] = _ExistingVerificationStage.waitingMetadata;
         } else {
           _verification[record.id] = _ExistingVerificationStage.checking;
           _verificationStartedTick[record.id] = _tick;
@@ -361,9 +355,11 @@ class SeedexTaskHandler extends TaskHandler {
         _connectivity.isEmpty) {
       return false;
     }
-    final hasWifi = _connectivity.contains(ConnectivityResult.wifi) ||
+    final hasWifi =
+        _connectivity.contains(ConnectivityResult.wifi) ||
         _connectivity.contains(ConnectivityResult.ethernet);
-    final hasMobile = _connectivity.contains(ConnectivityResult.mobile) ||
+    final hasMobile =
+        _connectivity.contains(ConnectivityResult.mobile) ||
         _connectivity.contains(ConnectivityResult.satellite);
     if (_settings.wifiOnly) return hasWifi;
     if (hasMobile && !_settings.cellularAllowed && !hasWifi) return false;
@@ -393,7 +389,9 @@ class SeedexTaskHandler extends TaskHandler {
     if (_settings.telegramEnabled &&
         _settings.telegramCompletionNotifications) {
       final record = _records[uid];
-      final displayName = name.isEmpty ? record?.displayName ?? 'Torrent' : name;
+      final displayName = name.isEmpty
+          ? record?.displayName ?? 'Torrent'
+          : name;
       await _sendTelegramMessage(
         '✅ Seedex is now seeding\n$displayName\n'
         'The phone has verified or downloaded 100% of the payload.',
@@ -541,12 +539,14 @@ class SeedexTaskHandler extends TaskHandler {
     );
 
     final snapshot = await _store.load();
-    await _store.save(AppSnapshot(
-      torrents: <TorrentRecord>[record, ...snapshot.torrents],
-      goals: snapshot.goals,
-      activity: snapshot.activity,
-      settings: snapshot.settings,
-    ));
+    await _store.save(
+      AppSnapshot(
+        torrents: <TorrentRecord>[record, ...snapshot.torrents],
+        goals: snapshot.goals,
+        activity: snapshot.activity,
+        settings: snapshot.settings,
+      ),
+    );
     await _addRecord(record);
     FlutterForegroundTask.sendDataToMain(<String, Object?>{
       'type': 'telegramAdded',
@@ -557,17 +557,21 @@ class SeedexTaskHandler extends TaskHandler {
 
   Future<void> _persistRemotePause({required bool paused}) async {
     final snapshot = await _store.load();
-    final records = snapshot.torrents.map((TorrentRecord record) {
-      final updated = record.copyWith(paused: paused);
-      _records[record.id] = updated;
-      return updated;
-    }).toList(growable: false);
-    await _store.save(AppSnapshot(
-      torrents: records,
-      goals: snapshot.goals,
-      activity: snapshot.activity,
-      settings: snapshot.settings,
-    ));
+    final records = snapshot.torrents
+        .map((TorrentRecord record) {
+          final updated = record.copyWith(paused: paused);
+          _records[record.id] = updated;
+          return updated;
+        })
+        .toList(growable: false);
+    await _store.save(
+      AppSnapshot(
+        torrents: records,
+        goals: snapshot.goals,
+        activity: snapshot.activity,
+        settings: snapshot.settings,
+      ),
+    );
   }
 
   Future<void> _sendTelegramMessage(String text) async {
@@ -641,9 +645,9 @@ class SeedexTaskHandler extends TaskHandler {
       };
       final verificationError =
           verification == _ExistingVerificationStage.failed
-              ? 'Existing files did not verify to 100%. Select the exact '
-                  'content folder and run recheck.'
-              : '';
+          ? 'Existing files did not verify to 100%. Select the exact '
+                'content folder and run recheck.'
+          : '';
 
       items.add(<String, Object?>{
         'id': entry.key,

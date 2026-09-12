@@ -33,14 +33,16 @@ class SeedexController extends ChangeNotifier {
   SeedexController({
     LocalStore? store,
     TelegramCredentialsStore? telegramCredentialsStore,
-  })  : _store = store ?? LocalStore(),
-        _telegramCredentialsStore =
-            telegramCredentialsStore ?? TelegramCredentialsStore();
+  }) : _store = store ?? LocalStore(),
+       _telegramCredentialsStore =
+           telegramCredentialsStore ?? TelegramCredentialsStore();
 
-  static const MethodChannel _intentMethods =
-      MethodChannel('dev.seedex/intents');
-  static const EventChannel _intentEvents =
-      EventChannel('dev.seedex/intents/events');
+  static const MethodChannel _intentMethods = MethodChannel(
+    'dev.seedex/intents',
+  );
+  static const EventChannel _intentEvents = EventChannel(
+    'dev.seedex/intents/events',
+  );
 
   final LocalStore _store;
   final TelegramCredentialsStore _telegramCredentialsStore;
@@ -75,26 +77,26 @@ class SeedexController extends ChangeNotifier {
   IncomingTorrent? get incomingTorrent => _incomingTorrent;
 
   int get totalDownloadRate => _torrents.fold(
-        0,
-        (int total, TorrentRecord item) => total + item.downloadRate,
-      );
+    0,
+    (int total, TorrentRecord item) => total + item.downloadRate,
+  );
   int get totalUploadRate => _torrents.fold(
-        0,
-        (int total, TorrentRecord item) => total + item.uploadRate,
-      );
+    0,
+    (int total, TorrentRecord item) => total + item.uploadRate,
+  );
   int get totalUploaded => _torrents.fold(
-        0,
-        (int total, TorrentRecord item) => total + item.uploadedBytes,
-      );
+    0,
+    (int total, TorrentRecord item) => total + item.uploadedBytes,
+  );
   int get totalDownloaded => _torrents.fold(
-        0,
-        (int total, TorrentRecord item) =>
-            total + (item.totalDone > 0 ? item.totalDone : 0),
-      );
+    0,
+    (int total, TorrentRecord item) =>
+        total + (item.totalDone > 0 ? item.totalDone : 0),
+  );
   int get totalSeedingSeconds => _torrents.fold(
-        0,
-        (int total, TorrentRecord item) => total + item.seedingSeconds,
-      );
+    0,
+    (int total, TorrentRecord item) => total + item.seedingSeconds,
+  );
   int get activeCount =>
       _torrents.where((TorrentRecord item) => item.isActive).length;
   int get seedingCount =>
@@ -149,7 +151,8 @@ class SeedexController extends ChangeNotifier {
       androidNotificationOptions: AndroidNotificationOptions(
         channelId: 'seedex_torrent_service',
         channelName: 'Torrent transfers',
-        channelDescription: 'Shows active Seedex downloads and seeding progress.',
+        channelDescription:
+            'Shows active Seedex downloads and seeding progress.',
         onlyAlertOnce: true,
       ),
       iosNotificationOptions: const IOSNotificationOptions(
@@ -167,7 +170,8 @@ class SeedexController extends ChangeNotifier {
   }
 
   Future<void> ensureEngineRunning() async {
-    final permission = await FlutterForegroundTask.checkNotificationPermission();
+    final permission =
+        await FlutterForegroundTask.checkNotificationPermission();
     if (permission != NotificationPermission.granted) {
       await FlutterForegroundTask.requestNotificationPermission();
     }
@@ -211,7 +215,10 @@ class SeedexController extends ChangeNotifier {
     }
     final savePath = await _resolveSavePath(startMode, existingDataPath);
 
-    final detected = SourceDetector.fromMagnet(normalized, sharedUrl: sourceUrl);
+    final detected = SourceDetector.fromMagnet(
+      normalized,
+      sharedUrl: sourceUrl,
+    );
     final manualDomain = SourceDetector.domainOf(manualSource);
     final record = TorrentRecord(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
@@ -226,10 +233,10 @@ class SeedexController extends ChangeNotifier {
       sourceConfidence: manualDomain.isNotEmpty
           ? SourceConfidence.manual
           : detected.isExact
-              ? SourceConfidence.exact
-              : detected.trackers.isNotEmpty
-                  ? SourceConfidence.tracker
-                  : SourceConfidence.unknown,
+          ? SourceConfidence.exact
+          : detected.trackers.isNotEmpty
+          ? SourceConfidence.tracker
+          : SourceConfidence.unknown,
       trackers: detected.trackers,
       status: startMode == TorrentStartMode.existingData
           ? 'Getting metadata'
@@ -250,7 +257,8 @@ class SeedexController extends ChangeNotifier {
   }) async {
     var readablePath = originalPath;
     if (originalPath.startsWith('content://')) {
-      readablePath = await _intentMethods.invokeMethod<String>(
+      readablePath =
+          await _intentMethods.invokeMethod<String>(
             'copyContentUri',
             <String, Object?>{'uri': originalPath},
           ) ??
@@ -306,8 +314,8 @@ class SeedexController extends ChangeNotifier {
       sourceConfidence: manualDomain.isNotEmpty
           ? SourceConfidence.manual
           : hint.trackers.isNotEmpty
-              ? SourceConfidence.tracker
-              : SourceConfidence.unknown,
+          ? SourceConfidence.tracker
+          : SourceConfidence.unknown,
       trackers: hint.trackers,
       status: startMode == TorrentStartMode.existingData
           ? 'Checking files'
@@ -544,11 +552,11 @@ class SeedexController extends ChangeNotifier {
   }
 
   double metricValue(GoalMetric metric) => switch (metric) {
-        GoalMetric.uploadedBytes => totalUploaded.toDouble(),
-        GoalMetric.overallRatio => overallRatio,
-        GoalMetric.torrentsAtOne => oneToOneCount.toDouble(),
-        GoalMetric.seedingHours => totalSeedingSeconds / 3600,
-      };
+    GoalMetric.uploadedBytes => totalUploaded.toDouble(),
+    GoalMetric.overallRatio => overallRatio,
+    GoalMetric.torrentsAtOne => oneToOneCount.toDouble(),
+    GoalMetric.seedingHours => totalSeedingSeconds / 3600,
+  };
 
   void clearCelebration() {
     _celebration = '';
@@ -587,10 +595,8 @@ class SeedexController extends ChangeNotifier {
       if (rawRecord is Map<Object?, Object?>) {
         final record = TorrentRecord.fromJson(
           rawRecord.map<String, Object?>(
-            (Object? key, Object? value) => MapEntry<String, Object?>(
-              key.toString(),
-              value,
-            ),
+            (Object? key, Object? value) =>
+                MapEntry<String, Object?>(key.toString(), value),
           ),
         );
         if (!_torrents.any((TorrentRecord item) => item.id == record.id)) {
@@ -624,8 +630,7 @@ class SeedexController extends ChangeNotifier {
     final current = _torrents[index];
     final sessionId = value['sessionId'] as String? ?? '';
     final rawUploaded = (value['rawUploaded'] as num? ?? 0).toInt();
-    final rawSeconds =
-        (value['sessionSeedingSeconds'] as num? ?? 0).toInt();
+    final rawSeconds = (value['sessionSeedingSeconds'] as num? ?? 0).toInt();
     final ledger = Map<String, int>.from(current.uploadLedger);
     var uploaded = current.uploadedBytes;
     var seedingSeconds = current.seedingSeconds;
@@ -633,8 +638,9 @@ class SeedexController extends ChangeNotifier {
       final previousUpload = ledger[sessionId] ?? 0;
       final previousSeconds = ledger['seed:$sessionId'] ?? 0;
       uploaded += (rawUploaded - previousUpload).clamp(0, rawUploaded).toInt();
-      seedingSeconds +=
-          (rawSeconds - previousSeconds).clamp(0, rawSeconds).toInt();
+      seedingSeconds += (rawSeconds - previousSeconds)
+          .clamp(0, rawSeconds)
+          .toInt();
       ledger[sessionId] = rawUploaded;
       ledger['seed:$sessionId'] = rawSeconds;
     }
@@ -645,8 +651,8 @@ class SeedexController extends ChangeNotifier {
       status: value['status'] as String? ?? current.status,
       progress: (value['progress'] as num? ?? current.progress).toDouble(),
       totalDone: (value['totalDone'] as num? ?? current.totalDone).toInt(),
-      totalWanted:
-          (value['totalWanted'] as num? ?? current.totalWanted).toInt(),
+      totalWanted: (value['totalWanted'] as num? ?? current.totalWanted)
+          .toInt(),
       uploadedBytes: uploaded,
       downloadRate: (value['downloadRate'] as num? ?? 0).toInt(),
       uploadRate: (value['uploadRate'] as num? ?? 0).toInt(),
@@ -671,8 +677,9 @@ class SeedexController extends ChangeNotifier {
       for (final entry in sessions.entries) {
         final rawUpload = entry.value['uploaded'] ?? 0;
         final rawSeconds = entry.value['seedingSeconds'] ?? 0;
-        uploaded +=
-            (rawUpload - (seen[entry.key] ?? 0)).clamp(0, rawUpload).toInt();
+        uploaded += (rawUpload - (seen[entry.key] ?? 0))
+            .clamp(0, rawUpload)
+            .toInt();
         seconds += (rawSeconds - (seen['seed:${entry.key}'] ?? 0))
             .clamp(0, rawSeconds)
             .toInt();
@@ -694,11 +701,13 @@ class SeedexController extends ChangeNotifier {
       return;
     }
     _lastActivityAt = now;
-    _activity.add(ActivitySample(
-      timestamp: now,
-      downloadRate: totalDownloadRate,
-      uploadRate: totalUploadRate,
-    ));
+    _activity.add(
+      ActivitySample(
+        timestamp: now,
+        downloadRate: totalDownloadRate,
+        uploadRate: totalUploadRate,
+      ),
+    );
     if (_activity.length > 144) {
       _activity.removeRange(0, _activity.length - 144);
     }
@@ -711,8 +720,7 @@ class SeedexController extends ChangeNotifier {
         final completed = goal.copyWith(completedAt: DateTime.now());
         _goals[index] = completed;
         _celebration = '${goal.title} completed';
-        if (_settings.telegramEnabled &&
-            _settings.telegramGoalNotifications) {
+        if (_settings.telegramEnabled && _settings.telegramGoalNotifications) {
           FlutterForegroundTask.sendDataToTask(<String, Object?>{
             'command': seedexTaskTelegramMessage,
             'text': '🎯 Seedex goal completed\n${completed.title}',
@@ -738,11 +746,11 @@ class SeedexController extends ChangeNotifier {
       onError: (Object _) {},
     );
     unawaited(
-      _intentMethods
-          .invokeMapMethod<String, Object?>('getInitialPayload')
-          .then((Map<String, Object?>? value) {
-        if (value != null) _handleIntentPayload(value);
-      }),
+      _intentMethods.invokeMapMethod<String, Object?>('getInitialPayload').then(
+        (Map<String, Object?>? value) {
+          if (value != null) _handleIntentPayload(value);
+        },
+      ),
     );
   }
 
@@ -750,26 +758,22 @@ class SeedexController extends ChangeNotifier {
     if (raw is! Map<Object?, Object?>) return;
     final value = raw['value'] as String? ?? '';
     final magnet = SourceDetector.magnetFromText(value);
-    final source = SourceDetector.webUrlFromText(value) ??
+    final source =
+        SourceDetector.webUrlFromText(value) ??
         (raw['referrer'] as String? ?? '');
     if (magnet != null) {
-      _incomingTorrent = IncomingTorrent(
-        magnet: magnet,
-        sourceUrl: source,
-      );
+      _incomingTorrent = IncomingTorrent(magnet: magnet, sourceUrl: source);
       notifyListeners();
       return;
     }
 
     final mimeType = (raw['mimeType'] as String? ?? '').toLowerCase();
-    final isTorrentFile = mimeType == 'application/x-bittorrent' ||
+    final isTorrentFile =
+        mimeType == 'application/x-bittorrent' ||
         value.toLowerCase().contains('.torrent') ||
         value.startsWith('content://');
     if (!isTorrentFile || value.isEmpty) return;
-    _incomingTorrent = IncomingTorrent(
-      torrentFile: value,
-      sourceUrl: source,
-    );
+    _incomingTorrent = IncomingTorrent(torrentFile: value, sourceUrl: source);
     notifyListeners();
   }
 
@@ -784,12 +788,14 @@ class SeedexController extends ChangeNotifier {
     });
   }
 
-  Future<void> _persist() => _store.save(AppSnapshot(
-        torrents: _torrents,
-        goals: _goals,
-        activity: _activity,
-        settings: _settings,
-      ));
+  Future<void> _persist() => _store.save(
+    AppSnapshot(
+      torrents: _torrents,
+      goals: _goals,
+      activity: _activity,
+      settings: _settings,
+    ),
+  );
 
   @override
   void dispose() {

@@ -6,7 +6,7 @@ import '../domain/models.dart';
 
 class LocalStore {
   LocalStore({SharedPreferencesAsync? preferences})
-      : _preferences = preferences ?? SharedPreferencesAsync();
+    : _preferences = preferences ?? SharedPreferencesAsync();
 
   static const String stateKey = 'seedex.state.v1';
   static const String engineLedgerKey = 'seedex.engine-ledger.v1';
@@ -33,7 +33,8 @@ class LocalStore {
       if (decoded is! Map<String, Object?>) throw const FormatException();
       final torrentValues =
           decoded['torrents'] as List<Object?>? ?? const <Object?>[];
-      final goalValues = decoded['goals'] as List<Object?>? ?? const <Object?>[];
+      final goalValues =
+          decoded['goals'] as List<Object?>? ?? const <Object?>[];
       final activityValues =
           decoded['activity'] as List<Object?>? ?? const <Object?>[];
       final rawSettings = decoded['settings'];
@@ -68,8 +69,9 @@ class LocalStore {
   Future<void> save(AppSnapshot snapshot) async {
     final encoded = jsonEncode(<String, Object?>{
       'version': 1,
-      'torrents':
-          snapshot.torrents.map((TorrentRecord item) => item.toJson()).toList(),
+      'torrents': snapshot.torrents
+          .map((TorrentRecord item) => item.toJson())
+          .toList(),
       'goals': snapshot.goals.map((SeedGoal item) => item.toJson()).toList(),
       'activity': snapshot.activity
           .map((ActivitySample item) => item.toJson())
@@ -99,8 +101,8 @@ class LocalStore {
           if (rawValues is! Map<String, Object?>) continue;
           sessions[sessionEntry.key] = <String, int>{
             'uploaded': (rawValues['uploaded'] as num? ?? 0).toInt(),
-            'seedingSeconds':
-                (rawValues['seedingSeconds'] as num? ?? 0).toInt(),
+            'seedingSeconds': (rawValues['seedingSeconds'] as num? ?? 0)
+                .toInt(),
           };
         }
         result[torrentEntry.key] = sessions;

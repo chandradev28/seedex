@@ -46,8 +46,8 @@ class TorrentMetadataParser {
     return TorrentMetadataHint(
       name: info is Map<String, Object?>
           ? _string(info['name.utf-8']).isNotEmpty
-              ? _string(info['name.utf-8'])
-              : _string(info['name'])
+                ? _string(info['name.utf-8'])
+                : _string(info['name'])
           : '',
       totalBytes: info is Map<String, Object?> ? _payloadSize(info) : 0,
       trackers: domains,
@@ -153,7 +153,8 @@ class _BencodeReader {
     }
     offset = colon + 1;
     final end = offset + length;
-    if (end > bytes.length) throw const FormatException('Truncated byte string');
+    if (end > bytes.length)
+      throw const FormatException('Truncated byte string');
     final value = Uint8List.sublistView(bytes, offset, end);
     offset = end;
     return value;

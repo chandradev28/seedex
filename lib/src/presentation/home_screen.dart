@@ -91,13 +91,16 @@ class _HomeScreenState extends State<HomeScreen> {
             SliverToBoxAdapter(
               child: EmptyState(
                 icon: CupertinoIcons.arrow_down_doc,
-                title: controller.torrents.isEmpty ? 'Add your first torrent' : 'Nothing here yet',
+                title: controller.torrents.isEmpty
+                    ? 'Add your first torrent'
+                    : 'Nothing here yet',
                 body: controller.torrents.isEmpty
                     ? 'Paste a magnet link or select a .torrent file. Seedex keeps every record on this device.'
                     : 'Try another filter to see your torrents.',
                 action: controller.torrents.isEmpty
                     ? FilledButton.icon(
-                        onPressed: () => showAddTorrentSheet(context, controller),
+                        onPressed: () =>
+                            showAddTorrentSheet(context, controller),
                         icon: const Icon(CupertinoIcons.add, size: 18),
                         label: const Text('Add torrent'),
                       )
@@ -152,7 +155,11 @@ class _TransferHero extends StatelessWidget {
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: <Color>[Color(0xFF1C6FC2), Color(0xFF2783DE), Color(0xFF4B9BE8)],
+            colors: <Color>[
+              Color(0xFF1C6FC2),
+              Color(0xFF2783DE),
+              Color(0xFF4B9BE8),
+            ],
           ),
           boxShadow: <BoxShadow>[
             BoxShadow(
@@ -167,14 +174,18 @@ class _TransferHero extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                const Icon(CupertinoIcons.waveform_path, color: Colors.white70, size: 18),
+                const Icon(
+                  CupertinoIcons.waveform_path,
+                  color: Colors.white70,
+                  size: 18,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'LIVE TRANSFER',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: Colors.white70,
-                        letterSpacing: 0.9,
-                      ),
+                    color: Colors.white70,
+                    letterSpacing: 0.9,
+                  ),
                 ),
                 const Spacer(),
                 Container(
@@ -218,7 +229,11 @@ class _TransferHero extends StatelessWidget {
 }
 
 class _SpeedValue extends StatelessWidget {
-  const _SpeedValue({required this.icon, required this.value, required this.label});
+  const _SpeedValue({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
 
   final IconData icon;
   final String value;
@@ -233,7 +248,10 @@ class _SpeedValue extends StatelessWidget {
           children: <Widget>[
             Icon(icon, color: Colors.white70, size: 15),
             const SizedBox(width: 5),
-            Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
           ],
         ),
         const SizedBox(height: 7),
@@ -272,10 +290,10 @@ class _TorrentCard extends StatelessWidget {
     final statusColor = record.error.isNotEmpty
         ? SeedexPalette.red
         : record.isSeeding
-            ? SeedexPalette.green
-            : record.paused
-                ? SeedexPalette.secondary
-                : SeedexPalette.blue;
+        ? SeedexPalette.green
+        : record.paused
+        ? SeedexPalette.secondary
+        : SeedexPalette.blue;
     return Hero(
       tag: 'torrent-${record.id}',
       child: Material(
@@ -296,7 +314,9 @@ class _TorrentCard extends StatelessWidget {
                   color: statusColor,
                   child: Text(
                     '${(record.progress * 100).round()}',
-                    style: theme.textTheme.labelMedium?.copyWith(color: statusColor),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: statusColor,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -313,11 +333,16 @@ class _TorrentCard extends StatelessWidget {
                       const SizedBox(height: 5),
                       Row(
                         children: <Widget>[
-                          StatusPill(label: record.paused ? 'Paused' : record.status, color: statusColor),
+                          StatusPill(
+                            label: record.paused ? 'Paused' : record.status,
+                            color: statusColor,
+                          ),
                           const SizedBox(width: 7),
                           Expanded(
                             child: Text(
-                              record.sourceDomain.isEmpty ? 'Unknown source' : record.sourceDomain,
+                              record.sourceDomain.isEmpty
+                                  ? 'Unknown source'
+                                  : record.sourceDomain,
                               style: theme.textTheme.labelMedium,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -328,13 +353,24 @@ class _TorrentCard extends StatelessWidget {
                       const SizedBox(height: 11),
                       Row(
                         children: <Widget>[
-                          Text('↓ ${formatSpeed(record.downloadRate)}',
-                              style: theme.textTheme.labelMedium?.copyWith(color: SeedexPalette.blue)),
+                          Text(
+                            '↓ ${formatSpeed(record.downloadRate)}',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: SeedexPalette.blue,
+                            ),
+                          ),
                           const SizedBox(width: 12),
-                          Text('↑ ${formatSpeed(record.uploadRate)}',
-                              style: theme.textTheme.labelMedium?.copyWith(color: SeedexPalette.green)),
+                          Text(
+                            '↑ ${formatSpeed(record.uploadRate)}',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: SeedexPalette.green,
+                            ),
+                          ),
                           const Spacer(),
-                          Text('R ${formatRatio(record.ratio)}', style: theme.textTheme.labelMedium),
+                          Text(
+                            'R ${formatRatio(record.ratio)}',
+                            style: theme.textTheme.labelMedium,
+                          ),
                         ],
                       ),
                     ],
@@ -345,7 +381,9 @@ class _TorrentCard extends StatelessWidget {
                   tooltip: record.paused ? 'Resume' : 'Pause',
                   onPressed: onToggle,
                   icon: Icon(
-                    record.paused ? CupertinoIcons.play_fill : CupertinoIcons.pause_fill,
+                    record.paused
+                        ? CupertinoIcons.play_fill
+                        : CupertinoIcons.pause_fill,
                     size: 18,
                   ),
                 ),
@@ -374,7 +412,11 @@ class _NetworkNotice extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          const Icon(CupertinoIcons.wifi_slash, color: SeedexPalette.orange, size: 20),
+          const Icon(
+            CupertinoIcons.wifi_slash,
+            color: SeedexPalette.orange,
+            size: 20,
+          ),
           const SizedBox(width: 11),
           Expanded(
             child: Text(

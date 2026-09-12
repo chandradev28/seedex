@@ -9,7 +9,7 @@ class TelegramCredentials {
 
 class TelegramCredentialsStore {
   TelegramCredentialsStore({FlutterSecureStorage? storage})
-      : _storage = storage ?? const FlutterSecureStorage();
+    : _storage = storage ?? const FlutterSecureStorage();
 
   static const String _tokenKey = 'seedex.telegram.bot-token.v1';
   static const String _chatIdKey = 'seedex.telegram.chat-id.v1';
@@ -27,7 +27,9 @@ class TelegramCredentialsStore {
     final token = credentials.botToken.trim();
     final chatId = credentials.chatId.trim();
     if (token.isEmpty || chatId.isEmpty) {
-      throw const FormatException('Bot token and approved chat ID are required.');
+      throw const FormatException(
+        'Bot token and approved chat ID are required.',
+      );
     }
     await _storage.write(key: _tokenKey, value: token);
     await _storage.write(key: _chatIdKey, value: chatId);

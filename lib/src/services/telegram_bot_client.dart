@@ -39,9 +39,9 @@ class TelegramBotClient {
     required String token,
     HttpClient? httpClient,
     Uri? apiBase,
-  })  : _token = token.trim(),
-        _httpClient = httpClient ?? HttpClient(),
-        _apiBase = apiBase ?? Uri.parse('https://api.telegram.org') {
+  }) : _token = token.trim(),
+       _httpClient = httpClient ?? HttpClient(),
+       _apiBase = apiBase ?? Uri.parse('https://api.telegram.org') {
     _httpClient.connectionTimeout = const Duration(seconds: 12);
   }
 
@@ -53,7 +53,9 @@ class TelegramBotClient {
     final payload = await _post('getMe');
     final result = payload['result'];
     if (result is! Map<String, Object?>) {
-      throw const TelegramApiException('Telegram returned an invalid bot profile.');
+      throw const TelegramApiException(
+        'Telegram returned an invalid bot profile.',
+      );
     }
     return TelegramBotIdentity(
       id: (result['id'] as num? ?? 0).toInt(),
@@ -66,28 +68,22 @@ class TelegramBotClient {
     required String chatId,
     required String text,
   }) async {
-    await _post(
-      'sendMessage',
-      <String, String>{
-        'chat_id': chatId,
-        'text': text,
-        'disable_web_page_preview': 'true',
-      },
-    );
+    await _post('sendMessage', <String, String>{
+      'chat_id': chatId,
+      'text': text,
+      'disable_web_page_preview': 'true',
+    });
   }
 
   Future<List<TelegramUpdate>> getUpdates({
     required int offset,
     int timeoutSeconds = 25,
   }) async {
-    final payload = await _post(
-      'getUpdates',
-      <String, String>{
-        'offset': offset.toString(),
-        'timeout': timeoutSeconds.clamp(0, 30).toString(),
-        'allowed_updates': jsonEncode(<String>['message']),
-      },
-    );
+    final payload = await _post('getUpdates', <String, String>{
+      'offset': offset.toString(),
+      'timeout': timeoutSeconds.clamp(0, 30).toString(),
+      'allowed_updates': jsonEncode(<String>['message']),
+    });
     final rawResult = payload['result'];
     if (rawResult is! List<Object?>) return const <TelegramUpdate>[];
 
@@ -102,11 +98,13 @@ class TelegramBotClient {
       final updateId = (rawUpdate['update_id'] as num?)?.toInt();
       final chatId = (chat['id'] as num?)?.toInt();
       if (updateId == null || chatId == null) continue;
-      updates.add(TelegramUpdate(
-        updateId: updateId,
-        chatId: chatId.toString(),
-        text: text,
-      ));
+      updates.add(
+        TelegramUpdate(
+          updateId: updateId,
+          chatId: chatId.toString(),
+          text: text,
+        ),
+      );
     }
     return updates;
   }
@@ -127,13 +125,15 @@ class TelegramBotClient {
       'x-www-form-urlencoded',
       charset: 'utf-8',
     );
-    request.write(parameters.entries
-        .map(
-          (MapEntry<String, String> entry) =>
-              '${Uri.encodeQueryComponent(entry.key)}='
-              '${Uri.encodeQueryComponent(entry.value)}',
-        )
-        .join('&'));
+    request.write(
+      parameters.entries
+          .map(
+            (MapEntry<String, String> entry) =>
+                '${Uri.encodeQueryComponent(entry.key)}='
+                '${Uri.encodeQueryComponent(entry.value)}',
+          )
+          .join('&'),
+    );
 
     final response = await request.close();
     final body = await response.transform(utf8.decoder).join();
@@ -173,21 +173,23 @@ class TelegramCommandParser {
       return const TelegramCommand(type: TelegramCommandType.unknown);
     }
     final separator = trimmed.indexOf(RegExp(r'\s'));
-    final rawCommand = separator < 0 ? trimmed : trimmed.substring(0, separator);
+    final rawCommand = separator < 0
+        ? trimmed
+        : trimmed.substring(0, separator);
     final command = rawCommand.split('@').first.toLowerCase();
     final argument = separator < 0 ? '' : trimmed.substring(separator).trim();
     return switch (command) {
       '/status' => const TelegramCommand(type: TelegramCommandType.status),
       '/add' => TelegramCommand(
-          type: TelegramCommandType.add,
-          argument: argument,
-        ),
-      '/pauseall' =>
-        const TelegramCommand(type: TelegramCommandType.pauseAll),
-      '/resumeall' =>
-        const TelegramCommand(type: TelegramCommandType.resumeAll),
-      '/help' || '/start' =>
-        const TelegramCommand(type: TelegramCommandType.help),
+        type: TelegramCommandType.add,
+        argument: argument,
+      ),
+      '/pauseall' => const TelegramCommand(type: TelegramCommandType.pauseAll),
+      '/resumeall' => const TelegramCommand(
+        type: TelegramCommandType.resumeAll,
+      ),
+      '/help' ||
+      '/start' => const TelegramCommand(type: TelegramCommandType.help),
       _ => const TelegramCommand(type: TelegramCommandType.unknown),
     };
   }

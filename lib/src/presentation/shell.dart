@@ -25,7 +25,9 @@ class _SeedexShellState extends State<SeedexShell> {
   void initState() {
     super.initState();
     widget.controller.addListener(_handleControllerEvent);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _handleControllerEvent());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _handleControllerEvent(),
+    );
   }
 
   @override
