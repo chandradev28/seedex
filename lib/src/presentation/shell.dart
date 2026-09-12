@@ -47,6 +47,7 @@ class _SeedexShellState extends State<SeedexShell> {
           context,
           widget.controller,
           initialMagnet: value.magnet,
+          initialTorrentFile: value.torrentFile,
           initialSourceUrl: value.sourceUrl,
         );
         _handlingOverlay = false;
