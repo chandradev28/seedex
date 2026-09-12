@@ -84,7 +84,10 @@ class TelegramBotClient {
       'timeout': timeoutSeconds.clamp(0, 30).toString(),
       'allowed_updates': jsonEncode(<String>['message']),
     });
-    final rawResult = payload['result'];
+    return decodeUpdates(payload['result']);
+  }
+
+  static List<TelegramUpdate> decodeUpdates(Object? rawResult) {
     if (rawResult is! List<Object?>) return const <TelegramUpdate>[];
 
     final updates = <TelegramUpdate>[];

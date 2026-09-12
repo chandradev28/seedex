@@ -54,5 +54,30 @@ void main() {
       expect(TelegramCommandParser.isApprovedChat('43', '42'), isFalse);
       expect(TelegramCommandParser.isApprovedChat('', ''), isFalse);
     });
+
+    test('retains update IDs while ignoring non-text messages', () {
+      final updates = TelegramBotClient.decodeUpdates(<Object?>[
+        <String, Object?>{
+          'update_id': 7,
+          'message': <String, Object?>{
+            'chat': <String, Object?>{'id': 42},
+            'photo': <Object?>[],
+          },
+        },
+        <String, Object?>{
+          'update_id': 8,
+          'message': <String, Object?>{
+            'chat': <String, Object?>{'id': 42},
+            'text': '/status',
+          },
+        },
+      ]);
+
+      expect(updates.map((TelegramUpdate item) => item.updateId), <int>[7, 8]);
+      expect(updates.first.chatId, isEmpty);
+      expect(updates.first.text, isEmpty);
+      expect(updates.last.chatId, '42');
+      expect(updates.last.text, '/status');
+    });
   });
 }
