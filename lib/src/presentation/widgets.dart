@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../core/formatters.dart';
@@ -101,7 +100,12 @@ class SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 26, 20, 12),
       child: Row(
         children: <Widget>[
-          Expanded(child: Text(title, style: Theme.of(context).textTheme.titleLarge)),
+          Expanded(
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ),
           if (trailing != null) trailing!,
         ],
       ),
@@ -239,7 +243,12 @@ class StatTile extends StatelessWidget {
 }
 
 class StatusPill extends StatelessWidget {
-  const StatusPill({required this.label, required this.color, this.icon, super.key});
+  const StatusPill({
+    required this.label,
+    required this.color,
+    this.icon,
+    super.key,
+  });
 
   final String label;
   final Color color;
@@ -262,7 +271,9 @@ class StatusPill extends StatelessWidget {
           ],
           Text(
             label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(color: color),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: color,
+                ),
           ),
         ],
       ),
@@ -301,7 +312,11 @@ class EmptyState extends StatelessWidget {
             child: Icon(icon, size: 30, color: theme.colorScheme.primary),
           ),
           const SizedBox(height: 20),
-          Text(title, style: theme.textTheme.titleLarge, textAlign: TextAlign.center),
+          Text(
+            title,
+            style: theme.textTheme.titleLarge,
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 8),
           Text(
             body,
@@ -310,7 +325,10 @@ class EmptyState extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
-          if (action != null) ...<Widget>[const SizedBox(height: 22), action!],
+          if (action != null) ...<Widget>[
+            const SizedBox(height: 22),
+            action!,
+          ],
         ],
       ),
     );
@@ -373,7 +391,9 @@ class _SpeedChartPainter extends CustomPainter {
     _drawSeries(
       canvas,
       size,
-      samples.map((ActivitySample item) => item.downloadRate).toList(),
+      samples
+          .map((ActivitySample item) => item.downloadRate)
+          .toList(),
       maxValue,
       downloadColor,
     );
@@ -436,11 +456,16 @@ class _SpeedChartPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_SpeedChartPainter oldDelegate) => oldDelegate.samples != samples;
+  bool shouldRepaint(_SpeedChartPainter oldDelegate) =>
+      oldDelegate.samples != samples;
 }
 
 class GoalProgressLabel extends StatelessWidget {
-  const GoalProgressLabel({required this.goal, required this.current, super.key});
+  const GoalProgressLabel({
+    required this.goal,
+    required this.current,
+    super.key,
+  });
 
   final SeedGoal goal;
   final double current;
