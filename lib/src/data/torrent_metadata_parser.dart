@@ -153,8 +153,9 @@ class _BencodeReader {
     }
     offset = colon + 1;
     final end = offset + length;
-    if (end > bytes.length)
+    if (end > bytes.length) {
       throw const FormatException('Truncated byte string');
+    }
     final value = Uint8List.sublistView(bytes, offset, end);
     offset = end;
     return value;

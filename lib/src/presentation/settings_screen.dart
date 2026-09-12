@@ -590,7 +590,9 @@ class _TelegramSetupSheetState extends State<_TelegramSetupSheet> {
                       ? null
                       : () async {
                           await widget.controller.disconnectTelegram();
-                          if (mounted) Navigator.of(context).pop();
+                          if (context.mounted) {
+                            Navigator.of(context).pop();
+                          }
                         },
                   style: TextButton.styleFrom(
                     foregroundColor: SeedexPalette.red,
