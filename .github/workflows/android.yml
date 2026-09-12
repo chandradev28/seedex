@@ -31,29 +31,28 @@ jobs:
           from pathlib import Path
 
           parser = Path('lib/src/data/torrent_metadata_parser.dart')
-          text = parser.read_text()
-          old = """    if (end > bytes.length)
-              throw const FormatException('Truncated byte string');
-          """
-          new = """    if (end > bytes.length) {
-              throw const FormatException('Truncated byte string');
-            }
-          """
-          if old not in text:
-              raise SystemExit('parser lint target not found')
-          parser.write_text(text.replace(old, new, 1))
+          lines = parser.read_text().splitlines()
+          target = '    if (end > bytes.length)'
+          index = lines.index(target)
+          if lines[index + 1].strip() != "throw const FormatException('Truncated byte string');":
+              raise SystemExit('unexpected parser lint target')
+          lines[index:index + 2] = [
+              '    if (end > bytes.length) {',
+              "      throw const FormatException('Truncated byte string');",
+              '    }',
+          ]
+          parser.write_text('\n'.join(lines) + '\n')
 
           settings = Path('lib/src/presentation/settings_screen.dart')
-          text = settings.read_text()
-          old = """                          if (mounted) Navigator.of(context).pop();
-          """
-          new = """                          if (context.mounted) {
-                                      Navigator.of(context).pop();
-                                    }
-          """
-          if old not in text:
-              raise SystemExit('context lint target not found')
-          settings.write_text(text.replace(old, new, 1))
+          lines = settings.read_text().splitlines()
+          target = '                          if (mounted) Navigator.of(context).pop();'
+          index = lines.index(target)
+          lines[index:index + 1] = [
+              '                          if (context.mounted) {',
+              '                            Navigator.of(context).pop();',
+              '                          }',
+          ]
+          settings.write_text('\n'.join(lines) + '\n')
           PY
 
           if ! git diff --quiet; then
