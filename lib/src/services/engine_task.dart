@@ -93,8 +93,11 @@ class SeedexTaskHandler extends TaskHandler {
     for (final entry in _engineIds.entries) {
       final info = _latest[entry.value];
       if (info != null && info.state == TorrentState.seeding && !info.isPaused) {
-        _seedingSeconds.update(entry.key, (int value) => value + 1,
-            ifAbsent: () => 1);
+        _seedingSeconds.update(
+          entry.key,
+          (int value) => value + 1,
+          ifAbsent: () => 1,
+        );
       }
       if (info != null &&
           !_settings.continueAfterGoal &&
@@ -120,41 +123,55 @@ class SeedexTaskHandler extends TaskHandler {
         final rawRecord = data['record'];
         if (rawRecord is Map<Object?, Object?>) {
           final json = rawRecord.map<String, Object?>(
-            (Object? key, Object? value) => MapEntry(key.toString(), value),
+            (Object? key, Object? value) => MapEntry<String, Object?>(
+              key.toString(),
+              value,
+            ),
           );
           unawaited(_addRecord(TorrentRecord.fromJson(json)));
         }
+        break;
       case seedexTaskPause:
         _pause(data['id'] as String? ?? '', userInitiated: true);
+        break;
       case seedexTaskResume:
         _resume(data['id'] as String? ?? '', userInitiated: true);
+        break;
       case seedexTaskRemove:
         _remove(
           data['id'] as String? ?? '',
           deleteFiles: data['deleteFiles'] as bool? ?? false,
         );
+        break;
       case seedexTaskRecheck:
         final id = _engineIds[data['id'] as String? ?? ''];
         if (id != null) _engine.recheckTorrent(id);
+        break;
       case seedexTaskConfigure:
         final rawSettings = data['settings'];
         if (rawSettings is Map<Object?, Object?>) {
           _settings = AppSettings.fromJson(rawSettings.map<String, Object?>(
-            (Object? key, Object? value) => MapEntry(key.toString(), value),
+            (Object? key, Object? value) => MapEntry<String, Object?>(
+              key.toString(),
+              value,
+            ),
           ));
           _engine
             ..setDownloadLimit(_settings.downloadLimit)
             ..setUploadLimit(_settings.uploadLimit);
           unawaited(_applyNetworkPolicy());
         }
+        break;
       case seedexTaskPauseAll:
         for (final id in _engineIds.keys.toList()) {
           _pause(id, userInitiated: true);
         }
+        break;
       case seedexTaskResumeAll:
         for (final id in _engineIds.keys.toList()) {
           _resume(id, userInitiated: true);
         }
+        break;
     }
   }
 
@@ -260,14 +277,18 @@ class SeedexTaskHandler extends TaskHandler {
         () => <String, Map<String, int>>{},
       );
       torrentLedger[_sessionId] = <String, int>{
-        'uploaded': math.max(
-          info.totalUploaded,
-          torrentLedger[_sessionId]?['uploaded'] ?? 0,
-        ),
-        'seedingSeconds': math.max(
-          _seedingSeconds[entry.key] ?? 0,
-          torrentLedger[_sessionId]?['seedingSeconds'] ?? 0,
-        ),
+        'uploaded': math
+            .max(
+              info.totalUploaded,
+              torrentLedger[_sessionId]?['uploaded'] ?? 0,
+            )
+            .toInt(),
+        'seedingSeconds': math
+            .max(
+              _seedingSeconds[entry.key] ?? 0,
+              torrentLedger[_sessionId]?['seedingSeconds'] ?? 0,
+            )
+            .toInt(),
       };
 
       items.add(<String, Object?>{
@@ -279,6 +300,9 @@ class SeedexTaskHandler extends TaskHandler {
         'totalWanted': info.totalWanted,
         'downloadRate': info.downloadRate,
         'uploadRate': info.uploadRate,
+        'rawUploaded': info.totalUploaded,
+        'sessionId': _sessionId,
+        'sessionSeedingSeconds': _seedingSeconds[entry.key] ?? 0,
         'peers': info.numPeers,
         'seeds': info.numSeeds,
         'paused': info.isPaused,
