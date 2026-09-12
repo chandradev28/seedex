@@ -32,6 +32,11 @@ jobs:
           java-version: '17'
           cache: gradle
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -50,6 +55,13 @@ jobs:
 
       - name: Run tests
         run: flutter test
+
+      - name: Bootstrap Gradle wrapper
+        shell: bash
+        run: |
+          echo "flutter.sdk=$(dirname "$(dirname "$(command -v flutter)")")" > android/local.properties
+          (cd android && gradle wrapper --gradle-version 8.13)
+          chmod +x android/gradlew
 
       - name: Build release APKs
         run: flutter build apk --release --split-per-abi
