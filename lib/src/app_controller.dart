@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -8,7 +7,6 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
-import 'core/formatters.dart';
 import 'data/local_store.dart';
 import 'data/source_detector.dart';
 import 'data/torrent_metadata_parser.dart';
@@ -241,7 +239,7 @@ class SeedexController extends ChangeNotifier {
     try {
       hint = TorrentMetadataParser.parse(await File(persistedPath).readAsBytes());
     } on FormatException {
-      // libtorrent performs authoritative validation after the record is created.
+      // libtorrent performs authoritative validation after record creation.
     }
 
     final manualDomain = SourceDetector.domainOf(manualSource);
@@ -312,7 +310,11 @@ class SeedexController extends ChangeNotifier {
       'deleteFiles': deleteFiles,
     });
     if (record.inputType == TorrentInputType.file) {
-      unawaited(File(record.inputValue).delete().catchError((Object _) => File(record.inputValue)));
+      try {
+        await File(record.inputValue).delete();
+      } on FileSystemException {
+        // Metadata may already have been cleaned by Android.
+      }
     }
     await _persist();
     if (_torrents.isEmpty && await FlutterForegroundTask.isRunningService) {
@@ -422,8 +424,9 @@ class SeedexController extends ChangeNotifier {
     if (sessionId.isNotEmpty) {
       final previousUpload = ledger[sessionId] ?? 0;
       final previousSeconds = ledger['seed:$sessionId'] ?? 0;
-      uploaded += (rawUploaded - previousUpload).clamp(0, rawUploaded);
-      seedingSeconds += (rawSeconds - previousSeconds).clamp(0, rawSeconds);
+      uploaded += (rawUploaded - previousUpload).clamp(0, rawUploaded).toInt();
+      seedingSeconds +=
+          (rawSeconds - previousSeconds).clamp(0, rawSeconds).toInt();
       ledger[sessionId] = rawUploaded;
       ledger['seed:$sessionId'] = rawSeconds;
     }
@@ -459,9 +462,11 @@ class SeedexController extends ChangeNotifier {
       for (final entry in sessions.entries) {
         final rawUpload = entry.value['uploaded'] ?? 0;
         final rawSeconds = entry.value['seedingSeconds'] ?? 0;
-        uploaded += (rawUpload - (seen[entry.key] ?? 0)).clamp(0, rawUpload);
-        seconds +=
-            (rawSeconds - (seen['seed:${entry.key}'] ?? 0)).clamp(0, rawSeconds);
+        uploaded +=
+            (rawUpload - (seen[entry.key] ?? 0)).clamp(0, rawUpload).toInt();
+        seconds += (rawSeconds - (seen['seed:${entry.key}'] ?? 0))
+            .clamp(0, rawSeconds)
+            .toInt();
         seen[entry.key] = rawUpload;
         seen['seed:${entry.key}'] = rawSeconds;
       }
@@ -524,8 +529,8 @@ class SeedexController extends ChangeNotifier {
     final value = raw['value'] as String? ?? '';
     final magnet = SourceDetector.magnetFromText(value);
     if (magnet == null) return;
-    final source = SourceDetector.webUrlFromText(value) ??
-        (raw['referrer'] as String? ?? '');
+    final source =
+        SourceDetector.webUrlFromText(value) ?? (raw['referrer'] as String? ?? '');
     _incomingTorrent = IncomingTorrent(magnet: magnet, sourceUrl: source);
     notifyListeners();
   }

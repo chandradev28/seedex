@@ -72,7 +72,9 @@ class _AddTorrentSheetState extends State<AddTorrentSheet> {
       type: FileType.custom,
       allowedExtensions: const <String>['torrent'],
     );
-    if (selected != null) setState(() => _torrentFile = selected);
+    if (selected != null && mounted) {
+      setState(() => _torrentFile = selected);
+    }
   }
 
   Future<void> _submit() async {
@@ -82,9 +84,13 @@ class _AddTorrentSheetState extends State<AddTorrentSheet> {
     });
     try {
       if (_mode == 0) {
+        final typedSource = _sourceController.text.trim();
+        final isSharedSource = widget.initialSourceUrl.isNotEmpty &&
+            typedSource == widget.initialSourceUrl;
         await widget.controller.addMagnet(
           magnet: _magnetController.text,
-          manualSource: _sourceController.text.trim(),
+          sourceUrl: isSharedSource ? typedSource : '',
+          manualSource: isSharedSource ? '' : typedSource,
           ratioTarget: _ratio,
         );
       } else {
@@ -100,15 +106,14 @@ class _AddTorrentSheetState extends State<AddTorrentSheet> {
       }
       if (mounted) Navigator.of(context).pop();
     } on Object catch (error) {
-      if (mounted) {
-        setState(() {
-          _error = error
-              .toString()
-              .replaceFirst('FormatException: ', '')
-              .replaceFirst('FileSystemException: ', '');
-          _submitting = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _error = error
+            .toString()
+            .replaceFirst('FormatException: ', '')
+            .replaceFirst('FileSystemException: ', '');
+        _submitting = false;
+      });
     }
   }
 
@@ -120,14 +125,16 @@ class _AddTorrentSheetState extends State<AddTorrentSheet> {
         20,
         4,
         20,
-        20 + MediaQuery.viewInsetsOf(context).bottom,
+        16 + MediaQuery.viewInsetsOf(context).bottom,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
             children: <Widget>[
-              Expanded(child: Text('Add torrent', style: theme.textTheme.headlineMedium)),
+              Expanded(
+                child: Text('Add torrent', style: theme.textTheme.headlineMedium),
+              ),
               IconButton(
                 tooltip: 'Close',
                 onPressed: () => Navigator.of(context).pop(),
@@ -135,118 +142,147 @@ class _AddTorrentSheetState extends State<AddTorrentSheet> {
               ),
             ],
           ),
-          const SizedBox(height: 18),
-          CupertinoSlidingSegmentedControl<int>(
-            groupValue: _mode,
-            thumbColor: theme.cardTheme.color ?? theme.colorScheme.surface,
-            onValueChanged: (int? value) {
-              if (value != null) setState(() => _mode = value);
-            },
-            children: const <int, Widget>{
-              0: Padding(
-                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 18),
-                child: Text('Magnet link'),
-              ),
-              1: Padding(
-                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 18),
-                child: Text('.torrent file'),
-              ),
-            },
-          ),
-          const SizedBox(height: 22),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 220),
-            child: _mode == 0
-                ? TextField(
-                    key: const ValueKey<String>('magnet'),
-                    controller: _magnetController,
-                    minLines: 4,
-                    maxLines: 7,
-                    keyboardType: TextInputType.url,
-                    autocorrect: false,
-                    decoration: const InputDecoration(
-                      labelText: 'Magnet link',
-                      hintText: 'magnet:?xt=urn:btih:…',
-                      alignLabelWithHint: true,
-                    ),
-                  )
-                : _FilePickerCard(file: _torrentFile, onPressed: _pickTorrent),
-          ),
-          const SizedBox(height: 18),
-          TextField(
-            controller: _sourceController,
-            keyboardType: TextInputType.url,
-            autocorrect: false,
-            decoration: const InputDecoration(
-              labelText: 'Source website · optional',
-              hintText: 'https://example.org/page',
-              prefixIcon: Icon(CupertinoIcons.globe, size: 20),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Seedex also records tracker domains, but labels them as inferred—not the original website.',
-            style: theme.textTheme.labelMedium,
-          ),
-          const SizedBox(height: 24),
-          Text('Sharing target', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            children: <double>[0.5, 1, 2, 3].map((double value) {
-              return ChoiceChip(
-                label: Text('${value.toStringAsFixed(value % 1 == 0 ? 0 : 1)}:1'),
-                selected: _ratio == value,
-                onSelected: (_) => setState(() => _ratio = value),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
+          const SizedBox(height: 12),
+          Expanded(
+            child: ListView(
+              physics: const BouncingScrollPhysics(),
               children: <Widget>[
-                Icon(CupertinoIcons.folder, color: theme.colorScheme.primary, size: 20),
-                const SizedBox(width: 11),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                CupertinoSlidingSegmentedControl<int>(
+                  groupValue: _mode,
+                  thumbColor:
+                      theme.cardTheme.color ?? theme.colorScheme.surface,
+                  onValueChanged: (int? value) {
+                    if (value != null) setState(() => _mode = value);
+                  },
+                  children: const <int, Widget>{
+                    0: Padding(
+                      padding:
+                          EdgeInsets.symmetric(vertical: 10, horizontal: 18),
+                      child: Text('Magnet link'),
+                    ),
+                    1: Padding(
+                      padding:
+                          EdgeInsets.symmetric(vertical: 10, horizontal: 18),
+                      child: Text('.torrent file'),
+                    ),
+                  },
+                ),
+                const SizedBox(height: 22),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  child: _mode == 0
+                      ? TextField(
+                          key: const ValueKey<String>('magnet'),
+                          controller: _magnetController,
+                          minLines: 4,
+                          maxLines: 7,
+                          keyboardType: TextInputType.url,
+                          autocorrect: false,
+                          decoration: const InputDecoration(
+                            labelText: 'Magnet link',
+                            hintText: 'magnet:?xt=urn:btih:…',
+                            alignLabelWithHint: true,
+                          ),
+                        )
+                      : _FilePickerCard(
+                          file: _torrentFile,
+                          onPressed: _pickTorrent,
+                        ),
+                ),
+                const SizedBox(height: 18),
+                TextField(
+                  controller: _sourceController,
+                  keyboardType: TextInputType.url,
+                  autocorrect: false,
+                  decoration: const InputDecoration(
+                    labelText: 'Source website · optional',
+                    hintText: 'https://example.org/page',
+                    prefixIcon: Icon(CupertinoIcons.globe, size: 20),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Tracker domains are marked as inferred, never as the original website.',
+                  style: theme.textTheme.labelMedium,
+                ),
+                const SizedBox(height: 24),
+                Text('Sharing target', style: theme.textTheme.titleMedium),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: <double>[0.5, 1, 2, 3].map((double value) {
+                    return ChoiceChip(
+                      label: Text(
+                        '${value.toStringAsFixed(value % 1 == 0 ? 0 : 1)}:1',
+                      ),
+                      selected: _ratio == value,
+                      onSelected: (_) => setState(() => _ratio = value),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
                     children: <Widget>[
-                      Text('Save to', style: theme.textTheme.labelMedium),
-                      const SizedBox(height: 2),
-                      Text(
-                        widget.controller.settings.downloadPath,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium,
+                      Icon(
+                        CupertinoIcons.folder,
+                        color: theme.colorScheme.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 11),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text('Save to', style: theme.textTheme.labelMedium),
+                            const SizedBox(height: 2),
+                            Text(
+                              widget.controller.settings.downloadPath,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
+                if (_error.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: 14),
+                  Text(
+                    _error,
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: SeedexPalette.red),
+                  ),
+                ],
+                const SizedBox(height: 18),
               ],
             ),
           ),
-          if (_error.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 14),
-            Text(_error, style: theme.textTheme.bodyMedium?.copyWith(color: SeedexPalette.red)),
-          ],
-          const Spacer(),
           SizedBox(
             width: double.infinity,
             height: 54,
             child: FilledButton(
               onPressed: _submitting ? null : _submit,
               style: FilledButton.styleFrom(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
               ),
               child: _submitting
                   ? const SizedBox.square(
                       dimension: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Text('Start torrent'),
             ),
@@ -281,8 +317,12 @@ class _FilePickerCard extends StatelessWidget {
         child: Column(
           children: <Widget>[
             Icon(
-              file == null ? CupertinoIcons.doc_badge_plus : CupertinoIcons.doc_checkmark_fill,
-              color: file == null ? theme.colorScheme.primary : SeedexPalette.green,
+              file == null
+                  ? CupertinoIcons.doc_fill
+                  : CupertinoIcons.doc_checkmark_fill,
+              color: file == null
+                  ? theme.colorScheme.primary
+                  : SeedexPalette.green,
               size: 34,
             ),
             const SizedBox(height: 12),
@@ -294,7 +334,7 @@ class _FilePickerCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              file == null ? 'Tap to browse this device' : formatBytes(file!.size),
+              file == null ? 'Tap to browse this device' : 'Ready to import',
               style: theme.textTheme.labelMedium,
             ),
           ],
@@ -304,7 +344,10 @@ class _FilePickerCard extends StatelessWidget {
   }
 }
 
-Future<void> showCreateGoalSheet(BuildContext context, SeedexController controller) {
+Future<void> showCreateGoalSheet(
+  BuildContext context,
+  SeedexController controller,
+) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -350,7 +393,9 @@ class _CreateGoalSheetState extends State<CreateGoalSheet> {
   void _create() {
     final amount = double.tryParse(_amount.text.trim());
     if (amount == null || amount <= 0 || _title.text.trim().isEmpty) {
-      setState(() => _error = 'Enter a title and a target greater than zero.');
+      setState(() {
+        _error = 'Enter a title and a target greater than zero.';
+      });
       return;
     }
     final target = _metric == GoalMetric.uploadedBytes
@@ -386,10 +431,22 @@ class _CreateGoalSheetState extends State<CreateGoalSheet> {
               initialValue: _metric,
               decoration: const InputDecoration(labelText: 'Measure'),
               items: const <DropdownMenuItem<GoalMetric>>[
-                DropdownMenuItem(value: GoalMetric.uploadedBytes, child: Text('Data uploaded')),
-                DropdownMenuItem(value: GoalMetric.overallRatio, child: Text('Overall ratio')),
-                DropdownMenuItem(value: GoalMetric.torrentsAtOne, child: Text('Torrents reaching 1:1')),
-                DropdownMenuItem(value: GoalMetric.seedingHours, child: Text('Time spent seeding')),
+                DropdownMenuItem(
+                  value: GoalMetric.uploadedBytes,
+                  child: Text('Data uploaded'),
+                ),
+                DropdownMenuItem(
+                  value: GoalMetric.overallRatio,
+                  child: Text('Overall ratio'),
+                ),
+                DropdownMenuItem(
+                  value: GoalMetric.torrentsAtOne,
+                  child: Text('Torrents reaching 1:1'),
+                ),
+                DropdownMenuItem(
+                  value: GoalMetric.seedingHours,
+                  child: Text('Time spent seeding'),
+                ),
               ],
               onChanged: (GoalMetric? value) {
                 if (value == null) return;
@@ -406,7 +463,8 @@ class _CreateGoalSheetState extends State<CreateGoalSheet> {
                 Expanded(
                   child: TextField(
                     controller: _amount,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(labelText: 'Target'),
                     onChanged: (_) => _updateSuggestedTitle(),
                   ),
@@ -448,21 +506,30 @@ class _CreateGoalSheetState extends State<CreateGoalSheet> {
                   context: context,
                   firstDate: DateTime.now(),
                   lastDate: DateTime.now().add(const Duration(days: 3650)),
-                  initialDate: _deadline ?? DateTime.now().add(const Duration(days: 30)),
+                  initialDate: _deadline ??
+                      DateTime.now().add(const Duration(days: 30)),
                 );
-                if (selected != null) setState(() => _deadline = selected);
+                if (selected != null && mounted) {
+                  setState(() => _deadline = selected);
+                }
               },
               child: InputDecorator(
                 decoration: const InputDecoration(
                   labelText: 'Deadline · optional',
                   prefixIcon: Icon(CupertinoIcons.calendar, size: 20),
                 ),
-                child: Text(_deadline == null ? 'No deadline' : compactDate(_deadline!)),
+                child: Text(
+                  _deadline == null ? 'No deadline' : compactDate(_deadline!),
+                ),
               ),
             ),
             if (_error.isNotEmpty) ...<Widget>[
               const SizedBox(height: 12),
-              Text(_error, style: theme.textTheme.bodyMedium?.copyWith(color: SeedexPalette.red)),
+              Text(
+                _error,
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: SeedexPalette.red),
+              ),
             ],
             const SizedBox(height: 22),
             SizedBox(
@@ -471,7 +538,9 @@ class _CreateGoalSheetState extends State<CreateGoalSheet> {
               child: FilledButton(
                 onPressed: _create,
                 style: FilledButton.styleFrom(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
                 ),
                 child: const Text('Create goal'),
               ),

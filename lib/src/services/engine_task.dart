@@ -3,7 +3,7 @@ import 'dart:math' as math;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
-import 'package:libtorrent_flutter/libtorrent_flutter.dart';
+import 'package:libtorrent_flutter/libtorrent_flutter.dart' hide formatSpeed;
 
 import '../core/formatters.dart';
 import '../data/local_store.dart';

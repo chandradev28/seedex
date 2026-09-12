@@ -15,14 +15,17 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final settings = controller.settings;
+    final AppSettings settings = controller.settings;
     return SafeArea(
       bottom: false,
       child: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: <Widget>[
           const SliverToBoxAdapter(
-            child: PageHeader(title: 'Settings', subtitle: 'Control data, power, and privacy'),
+            child: PageHeader(
+              title: 'Settings',
+              subtitle: 'Control data, power, and privacy',
+            ),
           ),
           SliverToBoxAdapter(
             child: _SettingsSection(
@@ -35,7 +38,11 @@ class SettingsScreen extends StatelessWidget {
                   subtitle: 'Pause transfers when Wi-Fi is unavailable',
                   value: settings.wifiOnly,
                   onChanged: (bool value) => controller.updateSettings(
-                    settings.copyWith(wifiOnly: value, cellularAllowed: value ? false : settings.cellularAllowed),
+                    settings.copyWith(
+                      wifiOnly: value,
+                      cellularAllowed:
+                          value ? false : settings.cellularAllowed,
+                    ),
                   ),
                 ),
                 _SettingsToggle(
@@ -54,9 +61,10 @@ class SettingsScreen extends StatelessWidget {
                   icon: CupertinoIcons.speedometer,
                   color: SeedexPalette.orange,
                   title: 'Speed limits',
-                  value: settings.downloadLimit == 0 && settings.uploadLimit == 0
-                      ? 'Unlimited'
-                      : '↓ ${formatSpeed(settings.downloadLimit)} · ↑ ${formatSpeed(settings.uploadLimit)}',
+                  value:
+                      settings.downloadLimit == 0 && settings.uploadLimit == 0
+                          ? 'Unlimited'
+                          : '↓ ${formatSpeed(settings.downloadLimit)} · ↑ ${formatSpeed(settings.uploadLimit)}',
                   onTap: () => _showSpeedLimits(context, controller),
                 ),
               ],
@@ -70,7 +78,8 @@ class SettingsScreen extends StatelessWidget {
                   icon: CupertinoIcons.arrow_2_circlepath,
                   color: SeedexPalette.green,
                   title: 'Continue after goal',
-                  subtitle: 'Keep seeding after the torrent reaches its ratio target',
+                  subtitle:
+                      'Keep seeding after the torrent reaches its ratio target',
                   value: settings.continueAfterGoal,
                   onChanged: (bool value) => controller.updateSettings(
                     settings.copyWith(continueAfterGoal: value),
@@ -83,7 +92,9 @@ class SettingsScreen extends StatelessWidget {
                   value: settings.downloadPath,
                   onTap: () async {
                     final selected = await FilePicker.getDirectoryPath();
-                    if (selected != null) await controller.chooseDownloadPath(selected);
+                    if (selected != null) {
+                      await controller.chooseDownloadPath(selected);
+                    }
                   },
                 ),
               ],
@@ -119,7 +130,8 @@ class SettingsScreen extends StatelessWidget {
                     context: context,
                     applicationName: 'Seedex',
                     applicationVersion: '0.1.0',
-                    applicationLegalese: 'GPL-3.0 · Built for lawful sharing',
+                    applicationLegalese:
+                        'GPL-3.0 · Built for lawful sharing',
                   ),
                 ),
                 const _SettingsInfo(
@@ -143,7 +155,11 @@ class SettingsScreen extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    const Icon(CupertinoIcons.info_circle_fill, color: SeedexPalette.orange, size: 20),
+                    const Icon(
+                      CupertinoIcons.info_circle_fill,
+                      color: SeedexPalette.orange,
+                      size: 20,
+                    ),
                     const SizedBox(width: 11),
                     Expanded(
                       child: Text(
@@ -161,7 +177,10 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _showSpeedLimits(BuildContext context, SeedexController controller) async {
+  Future<void> _showSpeedLimits(
+    BuildContext context,
+    SeedexController controller,
+  ) async {
     final down = TextEditingController(
       text: controller.settings.downloadLimit == 0
           ? ''
@@ -176,25 +195,40 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       builder: (BuildContext context) => Padding(
-        padding: EdgeInsets.fromLTRB(20, 4, 20, 20 + MediaQuery.viewInsetsOf(context).bottom),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          4,
+          20,
+          20 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text('Speed limits', style: Theme.of(context).textTheme.headlineMedium),
+            Text(
+              'Speed limits',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
             const SizedBox(height: 8),
-            Text('Leave a value empty for unlimited.', style: Theme.of(context).textTheme.bodyMedium),
+            Text(
+              'Leave a value empty for unlimited.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
             const SizedBox(height: 18),
             TextField(
               controller: down,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Download limit · MB/s'),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration:
+                  const InputDecoration(labelText: 'Download limit · MB/s'),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: up,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Upload limit · MB/s'),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration:
+                  const InputDecoration(labelText: 'Upload limit · MB/s'),
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -202,12 +236,16 @@ class SettingsScreen extends StatelessWidget {
               height: 52,
               child: FilledButton(
                 onPressed: () {
-                  final download = ((double.tryParse(down.text) ?? 0) * 1000000).round();
-                  final upload = ((double.tryParse(up.text) ?? 0) * 1000000).round();
-                  controller.updateSettings(controller.settings.copyWith(
-                    downloadLimit: download,
-                    uploadLimit: upload,
-                  ));
+                  final download =
+                      ((double.tryParse(down.text) ?? 0) * 1000000).round();
+                  final upload =
+                      ((double.tryParse(up.text) ?? 0) * 1000000).round();
+                  controller.updateSettings(
+                    controller.settings.copyWith(
+                      downloadLimit: download,
+                      uploadLimit: upload,
+                    ),
+                  );
                   Navigator.of(context).pop();
                 },
                 child: const Text('Save limits'),
@@ -237,7 +275,10 @@ class _SettingsSection extends StatelessWidget {
         children: <Widget>[
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
-            child: Text(title.toUpperCase(), style: Theme.of(context).textTheme.labelMedium),
+            child: Text(
+              title.toUpperCase(),
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
           ),
           Container(
             decoration: BoxDecoration(
@@ -246,10 +287,18 @@ class _SettingsSection extends StatelessWidget {
               border: Border.all(color: Theme.of(context).dividerColor),
             ),
             child: Column(
-              children: List<Widget>.generate(children.length * 2 - 1, (int index) {
-                if (index.isOdd) return const Padding(padding: EdgeInsets.only(left: 62), child: Divider());
-                return children[index ~/ 2];
-              }),
+              children: List<Widget>.generate(
+                children.length * 2 - 1,
+                (int index) {
+                  if (index.isOdd) {
+                    return const Padding(
+                      padding: EdgeInsets.only(left: 62),
+                      child: Divider(),
+                    );
+                  }
+                  return children[index ~/ 2];
+                },
+              ),
             ),
           ),
         ],
@@ -330,7 +379,12 @@ class _SettingsInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _SettingsRow(icon: icon, color: color, title: title, subtitle: value);
+    return _SettingsRow(
+      icon: icon,
+      color: color,
+      title: title,
+      subtitle: value,
+    );
   }
 }
 
@@ -363,7 +417,10 @@ class _SettingsRow extends StatelessWidget {
             Container(
               width: 36,
               height: 36,
-              decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(10),
+              ),
               child: Icon(icon, size: 18, color: Colors.white),
             ),
             const SizedBox(width: 12),
@@ -384,7 +441,10 @@ class _SettingsRow extends StatelessWidget {
                 ],
               ),
             ),
-            if (trailing != null) ...<Widget>[const SizedBox(width: 10), trailing!],
+            if (trailing != null) ...<Widget>[
+              const SizedBox(width: 10),
+              trailing!,
+            ],
           ],
         ),
       ),
