@@ -90,20 +90,25 @@ class TelegramBotClient {
     final updates = <TelegramUpdate>[];
     for (final rawUpdate in rawResult) {
       if (rawUpdate is! Map<String, Object?>) continue;
-      final message = rawUpdate['message'];
-      if (message is! Map<String, Object?>) continue;
-      final chat = message['chat'];
-      final text = message['text'];
-      if (chat is! Map<String, Object?> || text is! String) continue;
       final updateId = (rawUpdate['update_id'] as num?)?.toInt();
-      final chatId = (chat['id'] as num?)?.toInt();
-      if (updateId == null || chatId == null) continue;
+      if (updateId == null) continue;
+
+      var chatId = '';
+      var text = '';
+      final message = rawUpdate['message'];
+      if (message is Map<String, Object?>) {
+        final chat = message['chat'];
+        final messageText = message['text'];
+        final numericChatId = chat is Map<String, Object?>
+            ? (chat['id'] as num?)?.toInt()
+            : null;
+        if (numericChatId != null && messageText is String) {
+          chatId = numericChatId.toString();
+          text = messageText;
+        }
+      }
       updates.add(
-        TelegramUpdate(
-          updateId: updateId,
-          chatId: chatId.toString(),
-          text: text,
-        ),
+        TelegramUpdate(updateId: updateId, chatId: chatId, text: text),
       );
     }
     return updates;
