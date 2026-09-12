@@ -196,11 +196,18 @@ class TelegramCommandParser {
 
   static bool isValidMagnet(String value) {
     final uri = Uri.tryParse(value.trim());
-    return uri != null &&
-        uri.scheme.toLowerCase() == 'magnet' &&
-        (uri.queryParametersAll['xt'] ?? const <String>[]).any(
-          (String item) => item.toLowerCase().startsWith('urn:btih:'),
-        );
+    if (uri == null || uri.scheme.toLowerCase() != 'magnet') return false;
+
+    const prefix = 'urn:btih:';
+    final exactTopics = uri.queryParametersAll['xt'] ?? const <String>[];
+    return exactTopics.any((String item) {
+      final normalized = item.trim();
+      if (!normalized.toLowerCase().startsWith(prefix)) return false;
+      final infoHash = normalized.substring(prefix.length);
+      return RegExp(
+        r'^(?:[0-9A-Fa-f]{40}|[A-Za-z2-7]{32})$',
+      ).hasMatch(infoHash);
+    });
   }
 
   static bool isApprovedChat(String candidate, String approvedChatId) {

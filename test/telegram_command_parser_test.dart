@@ -3,13 +3,35 @@ import 'package:seedex/src/services/telegram_bot_client.dart';
 
 void main() {
   group('TelegramCommandParser', () {
-    test('parses bot-addressed commands and magnet arguments', () {
-      const magnet = 'magnet:?xt=urn:btih:0123456789abcdef';
+    test('parses bot-addressed commands and valid hex info hashes', () {
+      const magnet =
+          'magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567';
       final command = TelegramCommandParser.parse('/add@seedex_bot $magnet');
 
       expect(command.type, TelegramCommandType.add);
       expect(command.argument, magnet);
       expect(TelegramCommandParser.isValidMagnet(command.argument), isTrue);
+    });
+
+    test('accepts Base32 hashes and rejects malformed info hashes', () {
+      expect(
+        TelegramCommandParser.isValidMagnet(
+          'magnet:?xt=urn:btih:ABCDEFGHIJKLMNOPQRSTUVWXYZ234567',
+        ),
+        isTrue,
+      );
+      expect(
+        TelegramCommandParser.isValidMagnet(
+          'magnet:?xt=urn:btih:0123456789abcdef',
+        ),
+        isFalse,
+      );
+      expect(
+        TelegramCommandParser.isValidMagnet(
+          'magnet:?xt=urn:btih:zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',
+        ),
+        isFalse,
+      );
     });
 
     test('recognizes control commands', () {
