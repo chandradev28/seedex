@@ -13,7 +13,7 @@ dependencies:
   flutter:
     sdk: flutter
   connectivity_plus: ^7.3.1
-  cupertino_icons: ^1.0.8
+  cupertino_icons: ^2.0.0
   file_picker: ^12.2.0
   flutter_foreground_task: ^11.0.3
   flutter_secure_storage: ^11.1.0
